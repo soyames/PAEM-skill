@@ -7,12 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Found (real-install testing)
+
+- **Antigravity skill auto-discovery did not work in a controlled real-install
+  test.** `.agents/skills/paem/` (the documented convention, identical
+  directory layout and frontmatter shape that Claude Code loads correctly)
+  did not appear in Antigravity's skill list, and neither did an unrelated,
+  established third-party skill package with dozens of skills tested the
+  same way on the same machine. This points at an Antigravity-side gap, not
+  a PAEM-specific path problem, but it means the documented install
+  shouldn't be assumed to work - see the new SKILL DISCOVERY table in
+  `paem.md`, the honesty updates in `examples/antigravity.md`,
+  `README.md`, and `scripts/install.py`'s docstring, and the manual-context
+  fallback now documented for Antigravity. Codex CLI, Gemini CLI, and
+  Cursor skill discovery remain untested either way (installs succeed;
+  nobody's confirmed the skill shows up).
+
 ### Added (install)
 
 - `scripts/install.py`: a real cross-provider installer. Every tool in
-  `examples/` (Claude Code, Codex CLI, Gemini CLI, Antigravity, Cursor) now
-  has a genuine, independently-verified skills directory as of 2026, part
-  of the shared open `agentskills.io` packaging standard - this script
+  `examples/` (Claude Code, Codex CLI, Gemini CLI, Antigravity, Cursor) has
+  a documented skills directory as of 2026, part of the shared open
+  `agentskills.io` packaging standard - this script
   copies the runtime files to the correct one for `--provider X --scope
   {project,global}`. `.agents/skills/` is shared by Codex and Antigravity at
   project scope, so one install covers both. Replaces vague "clone it

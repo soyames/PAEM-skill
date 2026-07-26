@@ -62,7 +62,7 @@ PAEM is designed to work with any AI that can **read/write project files** and f
 | Codex / ChatGPT | [examples/codex.md](examples/codex.md) |
 | Gemini | [examples/gemini.md](examples/gemini.md) |
 | Cursor | [examples/cursor.md](examples/cursor.md) |
-| Antigravity | [examples/antigravity.md](examples/antigravity.md) |
+| Antigravity | [examples/antigravity.md](examples/antigravity.md) - documented auto-discovery unconfirmed, see note below |
 | OpenHands | [examples/openhands.md](examples/openhands.md) |
 | Aider | [examples/aider.md](examples/aider.md) - conventions file, not a skills directory |
 | Continue | [examples/continue.md](examples/continue.md) - rules file, not a skills directory |
@@ -70,7 +70,7 @@ PAEM is designed to work with any AI that can **read/write project files** and f
 
 Compatibility is **protocol-level** (files + instructions), not a certified integration with every vendor product.
 
-Claude Code, Cursor, Codex CLI, Gemini CLI, and Antigravity converged on the
+Claude Code, Cursor, Codex CLI, Gemini CLI, and Antigravity all document the
 same open skill-packaging format ([agentskills.io](https://agentskills.io))
 - a folder with `SKILL.md` in it, auto-discovered from a tool-specific
 directory. `scripts/install.py` copies this repo's runtime files to the
@@ -80,6 +80,15 @@ right directory for whichever of those five you name:
 python scripts/install.py --list                                            # see every provider's path
 python scripts/install.py --provider codex --scope project --target ~/code/my-app
 ```
+
+**Confirmed working: Claude Code only, so far.** Antigravity's auto-discovery
+failed in a controlled real-install test - same directory convention, same
+frontmatter shape that Claude Code loads correctly, didn't show up in
+Antigravity's skill list, and neither did an unrelated, established
+third-party skill package tested the same way. Codex CLI, Gemini CLI, and
+Cursor are untested either way (install succeeds; discovery unconfirmed).
+See the SKILL DISCOVERY table in `paem.md` for the current state and
+`examples/antigravity.md` for a manual-context fallback.
 
 Aider and Continue don't have that directory-scan mechanism - they use an
 explicitly-loaded conventions/rules file instead, so their install steps

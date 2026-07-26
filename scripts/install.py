@@ -15,7 +15,14 @@ Usage:
     python scripts/install.py --provider codex --scope global
     python scripts/install.py --provider antigravity --scope project --target . --dry-run
 
-Verified directories (each provider's own current public docs):
+Directories below match each provider's own current public docs. That is
+NOT the same as confirmed working - see docs/schema-migration.md's sibling,
+the SKILL DISCOVERY table in paem.md, for what has and hasn't been verified
+against a real install. Short version: Claude Code is confirmed. Antigravity
+is documented but failed in a controlled real-install test (files land in
+the right place; the skill just doesn't show up) - see examples/antigravity.md
+for a manual fallback. Codex, Gemini CLI, and Cursor are untested either way.
+
   claude-code   project: <target>/.claude/skills/paem/    global: ~/.claude/skills/paem/
   codex         project: <target>/.agents/skills/paem/    global: ~/.codex/skills/paem/
   gemini-cli    project: <target>/.gemini/skills/paem/    global: ~/.gemini/skills/paem/
@@ -25,7 +32,8 @@ Verified directories (each provider's own current public docs):
 Note: codex and antigravity share the same project-level path (.agents/skills/)
 - that's the shared open-standard convention, not a coincidence - so one
 project-scope install with either --provider codex or --provider antigravity
-covers both tools for that project.
+covers both tools for that project (assuming the target host actually scans
+that path - see above).
 
 This only copies files. It never touches your global git/tool config and
 never overwrites files outside the destination skill folder.

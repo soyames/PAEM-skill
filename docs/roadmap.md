@@ -48,6 +48,8 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [x] Sample `.paem/` fixture for demos and tests (`fixtures/sample-project/.paem/`)
 - [ ] Verify `paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py` stdin field names against live installs (currently best-effort from public docs only) - tracked via the **Hook adapter field verification** issue form; adapters now log to stderr when their field guesses don't match, so this is at least observable rather than silent
 - [ ] Revisit a Windsurf/Cascade successor adapter once Devin Local's hook surface (if any) stabilizes
+- [ ] **Antigravity skill auto-discovery does not work in practice** - confirmed via a controlled real-install test: `.agents/skills/paem/` (documented convention, matches Claude Code's identical setup) did not appear in Antigravity's skill list, and neither did an unrelated, established third-party skill package tested the same way on the same machine. Root cause unknown (unshipped feature, a setting, or a non-scan discovery mechanism) - needs someone with Antigravity access to investigate further, or an update from Antigravity's own docs/changelog. Manual-context fallback documented in `examples/antigravity.md` in the meantime. See the SKILL DISCOVERY table in `paem.md`.
+- [ ] Codex CLI, Gemini CLI, and Cursor skill *discovery* (not hooks) is untested either way - installs succeed but nobody has confirmed the skill actually shows up in any of the three yet
 
 ---
 

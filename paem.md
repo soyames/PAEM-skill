@@ -504,6 +504,29 @@ Whenever execution resumes:
 
 ---
 
+# SKILL DISCOVERY (OPTIONAL, `scripts/install.py`)
+
+`scripts/install.py` copies this repo's runtime files into whichever host's
+documented skills directory you name. Documented does not always mean
+confirmed - the table below separates the two, based on real installs, not
+just what each provider's docs say.
+
+| Host | Documented path | Empirically confirmed | Status |
+|------|-----------------|------------------------|--------|
+| Claude Code | `.claude/skills/paem/` (project), `~/.claude/skills/paem/` (global) | Yes | Skill loads and lists correctly, both via a repo install and the packaged Cowork skill |
+| Codex CLI | `.agents/skills/paem/` (project), `~/.codex/skills/paem/` (global) | Not yet tested | Install succeeds (files land in the right place); discovery not yet confirmed |
+| Gemini CLI | `.gemini/skills/paem/` (project), `~/.gemini/skills/paem/` (global) | Not yet tested | Install succeeds; discovery not yet confirmed (also blocked by a Gemini CLI individual-tier auth change pointing users to Antigravity, as of this writing) |
+| Antigravity | `.agents/skills/paem/` (workspace), `~/.gemini/config/skills/paem/` (global) | **No - failed in a controlled test** | Install succeeds (files land in the right place, same directory and frontmatter shape Claude Code loads correctly), but the skill did not appear in Antigravity's skill list. Same result for an unrelated, established third-party skill package with dozens of skills using the identical convention - so this looks like an Antigravity-side gap (unshipped feature, a setting, or a non-scan discovery mechanism), not a PAEM-specific path problem. See `examples/antigravity.md` for the manual-context fallback. |
+| Cursor | `.cursor/skills/paem/` (project only) | Not yet tested | Install succeeds; discovery not yet confirmed |
+
+"Install succeeds" only means the files landed where the provider's own
+docs say to put them - it is not a claim that the host actually reads them.
+Treat every row without a "Yes" in the confirmed column as unverified until
+someone reports back (see the **Hook adapter field verification** issue
+form, which covers this too, not just hook field names).
+
+---
+
 # PLATFORM INTEGRATIONS (OPTIONAL)
 
 The phases above are enforced by instruction alone, so they work on any
