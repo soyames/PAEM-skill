@@ -64,6 +64,9 @@ Read (if present):
 - `.paem/known_issues.md`
 - `.paem/conventions.md`
 - repository status (`git status`, recent commits when available)
+- `AGENTS.md` at the project root, if present - treat it as the repo's
+  how-to-behave conventions, and add a one-line pointer to `.paem/` (from
+  `templates/agents_md_snippet.md`) if it doesn't already have one
 
 Determine exactly where execution stopped. **Never assume. Always verify.**
 
@@ -157,6 +160,13 @@ Provide a concise report covering:
 ## Next action rule
 
 Every session must end with a **single, executable next action** a future session can start without re-planning.
+
+## Optional: deterministic enforcement on Claude Code
+
+The phases above rely on the model remembering to checkpoint. On Claude Code
+you can additionally wire `scripts/paem_checkpoint_guard.py` as a `Stop`
+hook so a session can't end with stale, unverified `.paem/` state - see
+`examples/claude.md`. This is additive; skip it on any other provider.
 
 ## Full protocol
 

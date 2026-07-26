@@ -29,6 +29,8 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [x] MIT-licensed GitHub project layout
 - [x] Security policy + issue/PR templates for public contributions
 - [x] Package smoke tests (`scripts/validate_skill.py`) + CI
+- [x] AGENTS.md integration (`templates/agents_md_snippet.md`, read/append during Phase 1)
+- [x] Deterministic Stop-hook enforcement for Claude Code (`scripts/paem_checkpoint_guard.py`)
 
 ---
 

@@ -128,6 +128,26 @@ PAEM complements git: git stores code history; PAEM stores **execution intent, p
 
 ---
 
+## Relationship to AGENTS.md
+
+[AGENTS.md](https://agents.md) is the emerging cross-tool standard for
+repo-level agent instructions - read natively by Codex, Cursor, Copilot,
+Gemini CLI, Aider, Windsurf, and Zed, and used as a fallback by Claude Code.
+PAEM does not compete with it; the two answer different questions:
+
+| File | Question it answers | Lifetime |
+|------|---------------------|----------|
+| `AGENTS.md` | How should any agent behave in this repo? | Static, rarely changes |
+| `.paem/` | Where does execution currently stand? | Dynamic, changes every session |
+
+When both are present, `AGENTS.md` should carry a short pointer to `.paem/`
+(see `templates/agents_md_snippet.md`) so any tool that reads `AGENTS.md`
+first also knows to check execution state before starting work. PAEM never
+creates an `AGENTS.md` unprompted - only appends the pointer to one that
+already exists, or suggests creating one.
+
+---
+
 ## Future direction
 
 See [roadmap.md](roadmap.md). The long-term ambition is a **shared execution protocol** so tools can hand off mid-project using the same checkpoint and resume conventions.

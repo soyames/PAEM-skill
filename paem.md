@@ -161,6 +161,31 @@ Use the skill `templates/` as the canonical shapes for checkpoint, summary, and 
 
 ---
 
+# RELATIONSHIP TO AGENTS.md
+
+AGENTS.md is the emerging cross-tool standard (read natively by Codex, Cursor,
+Copilot, Gemini CLI, Aider, Windsurf, Zed, and used as a fallback by Claude
+Code) for telling any agent **how to behave** in a repository: which commands
+to run, what to avoid, how to verify work.
+
+PAEM does not compete with that. `.paem/` answers a different question -
+**where execution currently stands** - and changes every session, which is
+why it does not belong inside AGENTS.md itself.
+
+If the project has an `AGENTS.md`:
+
+- Read it during Phase 1 as part of loading state. It may define the actual
+  verify/test commands to run in Phase 2.
+- If it has no pointer to `.paem/`, append the block from
+  `templates/agents_md_snippet.md` so any agent - regardless of which tool
+  opens the project next - knows to check `.paem/` before starting work.
+
+If the project has no `AGENTS.md`, do not create one unprompted. Mention to
+the user that adding one (with the PAEM pointer) would let other tools share
+the same execution state, and let them decide.
+
+---
+
 # TASK
 
 For every execution session, perform the following workflow.
@@ -179,6 +204,7 @@ Read:
 - known issues
 - coding conventions
 - repository status
+- `AGENTS.md` at the project root, if present (see RELATIONSHIP TO AGENTS.md)
 
 Determine exactly where execution previously stopped.
 
@@ -421,6 +447,21 @@ Whenever execution resumes:
 7. Never repeat verified work.
 8. Update project summaries continuously.
 9. Prepare for the next interruption before it happens.
+
+---
+
+# PLATFORM INTEGRATIONS (OPTIONAL)
+
+The phases above are enforced by instruction alone, so they work on any
+capable, file-reading agent - that provider-agnostic core is not optional.
+
+On platforms that support deterministic hooks, layer enforcement on top so
+checkpointing is not only self-reported. Claude Code's `Stop` hook can run a
+real script that checks whether `.paem/` state is stale relative to the
+working tree and, if so, blocks the session from ending until a fresh
+checkpoint is written - see `scripts/paem_checkpoint_guard.py` and
+`examples/claude.md` for the wiring. This is additive: skip it entirely and
+the prompted protocol above still works the same.
 
 ---
 

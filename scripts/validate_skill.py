@@ -78,6 +78,8 @@ def check_layout() -> None:
         "templates/resume_prompt.md",
         "templates/task_list.md",
         "templates/completed_tasks.md",
+        "templates/agents_md_snippet.md",
+        "scripts/paem_checkpoint_guard.py",
         ".github/PULL_REQUEST_TEMPLATE.md",
         ".github/CODEOWNERS",
         ".github/ISSUE_TEMPLATE/config.yml",
@@ -234,6 +236,19 @@ def check_gitignore() -> None:
         warn(".gitignore does not mention .env")
 
 
+def check_checkpoint_guard_compiles() -> None:
+    """The Stop-hook guard script must at least be syntactically valid."""
+    import py_compile
+
+    path = ROOT / "scripts" / "paem_checkpoint_guard.py"
+    if not path.is_file():
+        return  # already reported by check_layout()
+    try:
+        py_compile.compile(str(path), doraise=True)
+    except py_compile.PyCompileError as exc:
+        error(f"scripts/paem_checkpoint_guard.py does not compile: {exc}")
+
+
 def dry_run_paem_init() -> None:
     """Simulate initializing .paem/ from templates (what an agent should do)."""
     templates = ROOT / "templates"
@@ -321,6 +336,7 @@ def main() -> int:
     check_skill_md()
     check_skill_yaml()
     check_checkpoint_template()
+    check_checkpoint_guard_compiles()
     check_readme_links()
     check_gitignore()
     check_no_em_dashes_in_core()

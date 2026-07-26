@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub issue forms (bug / feature / question), PR template, CODEOWNERS
 - CI workflow running `scripts/validate_skill.py`
 - Package smoke tests (layout, links, templates, dry-run `.paem/` init)
+- AGENTS.md integration: Phase 1 reads `AGENTS.md` when present and appends
+  a `.paem/` pointer (`templates/agents_md_snippet.md`) if missing, so any
+  AGENTS.md-reading tool shares the same execution state
+- Deterministic Stop-hook enforcement for Claude Code
+  (`scripts/paem_checkpoint_guard.py`): blocks a session from ending with
+  stale, uncheckpointed `.paem/` state; fails open on error and respects
+  `PAEM_SKIP_GUARD=1`
+- `docs/architecture.md` section on PAEM's relationship to AGENTS.md
 
 ## [1.0.0] - 2026-07-26
 

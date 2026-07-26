@@ -33,6 +33,7 @@ keywords:
   - rate-limit
   - persistent
   - multi-session
+  - agents.md
 
 entry: paem.md
 skill_entry: SKILL.md
@@ -55,5 +56,7 @@ runtime:
     - ability to follow multi-step instructions
   optional:
     - git
+    - AGENTS.md (repo-wide agent conventions, cross-tool standard)
+    - deterministic hooks (e.g. Claude Code Stop hook, for enforced checkpointing)
 
 language: en

@@ -138,6 +138,7 @@ Do **not** put secrets, tokens, or private keys in checkpoints.
 | Code done, no checkpoint | On resume, rebuild checkpoint from git + scan |
 | Conflicting checkpoints | Prefer highest id with matching commit; repair summary |
 | Half-written checkpoint | Write to temp file then rename; or write new id |
+| Model forgets to checkpoint before stopping | On Claude Code, wire `scripts/paem_checkpoint_guard.py` as a `Stop` hook so the session can't end with stale `.paem/` state - see `examples/claude.md` |
 
 ---
 
