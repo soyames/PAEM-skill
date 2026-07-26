@@ -68,17 +68,3 @@ Strangers may open issues and PRs. Maintainers enforce:
 | Link an issue for non-trivial PRs | Traceability |
 
 PRs that look like drive-by malware, spam, or credential harvesting will be closed and the author blocked if needed.
-
----
-
-## Maintainer hardening (recommended on GitHub)
-
-After the repo is public, enable:
-
-1. **Security advisories** and private vulnerability reporting
-2. **Branch protection** on `main` / `master`: require PR, require review, no force-push
-3. **CODEOWNERS** (optional) so reviews route to `@soyames`
-4. Disable force-pushes and restrict who can push to default branch
-5. Review **Actions** permissions if you add CI later (default least privilege)
-
-This file documents intent; GitHub UI settings must still be flipped by the owner.
