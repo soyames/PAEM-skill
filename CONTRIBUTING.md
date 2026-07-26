@@ -53,9 +53,12 @@ were written from each host's public hook documentation, not confirmed
 against a live install (unlike the Claude Code adapter, which is). If you
 use one of those tools:
 
-1. Run the adapter for real and capture the raw stdin JSON your hook
-   received (see the **Hook adapter field verification** issue form for the
-   easiest way to do this).
+1. Wire `scripts/paem_hook_debug.py <host-label>` as the hook command
+   instead of the real guard, trigger a stop, and read the captured file it
+   writes under `.paem/.guard/hook-debug/` (or your system temp dir if
+   `.paem/` doesn't exist yet) - it never blocks, so it's safe to use for
+   this even mid-session. This is the easiest way to get the raw stdin
+   JSON your hook actually received.
 2. Open that form, saying which fields matched the adapter's guesses and
    which didn't, and whether block/allow behaved as documented.
 3. If a field name needs correcting, a PR updating the relevant

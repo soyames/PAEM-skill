@@ -109,6 +109,7 @@ def check_layout() -> None:
         "scripts/paem_schema_lib.py",
         "scripts/validate_checkpoint.py",
         "scripts/paem_init.py",
+        "scripts/paem_hook_debug.py",
         ".github/PULL_REQUEST_TEMPLATE.md",
         ".github/CODEOWNERS",
         ".github/ISSUE_TEMPLATE/config.yml",
@@ -322,6 +323,7 @@ def check_checkpoint_guard_compiles() -> None:
         "scripts/paem_schema_lib.py",
         "scripts/validate_checkpoint.py",
         "scripts/paem_init.py",
+        "scripts/paem_hook_debug.py",
     ]
     for rel in guard_scripts:
         path = ROOT / rel
