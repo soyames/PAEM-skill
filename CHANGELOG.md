@@ -45,6 +45,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PLATFORM INTEGRATIONS` table in `paem.md` covering Claude Code, Codex
   CLI, Gemini CLI, Cursor, and why Windsurf is explicitly skipped
   (Cascade reaches end-of-life 2026-07-01)
+- **Hook adapter field verification** GitHub issue form
+  (`.github/ISSUE_TEMPLATE/hook_field_verification.yml`) so real users of
+  Codex CLI, Gemini CLI, and Cursor can confirm or correct the best-effort
+  stdin field names in those adapters; linked from `CONTRIBUTING.md` and
+  `docs/roadmap.md`
+- New "scripts/ (checkpoint guards)" area option in the bug report form
 
 ## [1.0.0] - 2026-07-26
 

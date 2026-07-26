@@ -1,0 +1,94 @@
+name: Hook adapter field verification
+description: Confirm or correct the stdin fields / block behavior for a checkpoint-guard adapter (Codex CLI, Gemini CLI, Cursor) against a real install.
+title: "[hook-verify] "
+labels: ["hook-verification", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `scripts/paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py`
+        were written from each host's public hook documentation, not from a
+        live install - see the confidence note in each file's docstring and
+        the PLATFORM INTEGRATIONS table in `paem.md`. This form is for
+        closing that gap: run the adapter for real, tell us what its hook
+        actually sent and whether block/allow behaved as documented.
+
+        **Do not paste API keys, tokens, or private source.** Sanitize file
+        paths and project names if they're sensitive - the shape of the JSON
+        matters more than the exact values.
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options:
+        - Codex CLI (OpenAI)
+        - Gemini CLI
+        - Cursor
+        - Other / new provider not yet in examples/
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Exact tool version
+      description: e.g. `codex --version`, `gemini --version`, Cursor's Help > About
+      placeholder: "0.114.2"
+    validations:
+      required: true
+  - type: textarea
+    id: raw-payload
+    attributes:
+      label: Raw stdin JSON the hook received
+      description: >
+        Easiest way: temporarily replace the adapter's body with
+        `import sys; open('/tmp/paem_hook_payload.json','w').write(sys.stdin.read())`,
+        trigger the hook once, then paste the file contents here (redacted).
+      render: json
+    validations:
+      required: true
+  - type: checkboxes
+    id: fields-matched
+    attributes:
+      label: Which fields did the adapter correctly find?
+      description: The adapter currently tries these key names, in order, for each value.
+      options:
+        - label: "Working directory - one of: cwd, workspace_root, working_directory, project_root (or workspace_roots[0] for Cursor)"
+        - label: "Session identifier - one of: session_id, thread_id, conversation_id"
+        - label: "Transcript path (Codex/Gemini only - not expected on Cursor)"
+    validations:
+      required: false
+  - type: input
+    id: correct-field-names
+    attributes:
+      label: If any field name was wrong, what's the actual key?
+      description: e.g. "working directory arrives as `workingDirectory`, not `cwd`"
+      placeholder: field -> actual key name
+  - type: dropdown
+    id: block-behavior
+    attributes:
+      label: Did block/allow behave as documented?
+      description: >
+        Expected: exit 2 + stderr message blocks the turn from ending (Codex,
+        Gemini); a followup_message is enqueued (Cursor, best-effort nudge
+        only - not expected to hard-block).
+      options:
+        - "Yes, matched exactly"
+        - "Partially - see notes"
+        - "No - the turn ended anyway despite exit 2 / followup_message was ignored"
+        - "Didn't test this part"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else worth knowing?
+      description: Config quirks, permission prompts, sandboxing restrictions, hook not firing at all, etc.
+  - type: checkboxes
+    id: confirms
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have searched existing issues for duplicates
+          required: true
+        - label: This report contains no secrets, tokens, or private source
+          required: true

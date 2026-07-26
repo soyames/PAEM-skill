@@ -46,6 +46,27 @@ When adding a provider:
 4. Link it from `README.md`
 5. Do **not** claim certified vendor support unless you tested it - prefer “compatible / designed for”
 
+### Verify a hook adapter
+
+`scripts/paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py`
+were written from each host's public hook documentation, not confirmed
+against a live install (unlike the Claude Code adapter, which is). If you
+use one of those tools:
+
+1. Run the adapter for real and capture the raw stdin JSON your hook
+   received (see the **Hook adapter field verification** issue form for the
+   easiest way to do this).
+2. Open that form, saying which fields matched the adapter's guesses and
+   which didn't, and whether block/allow behaved as documented.
+3. If a field name needs correcting, a PR updating the relevant
+   `_CWD_KEYS` / `_SESSION_KEYS` tuple (or `workspace_roots` handling for
+   Cursor) plus removing the "best-effort" language from that file's
+   docstring and the PLATFORM INTEGRATIONS table in `paem.md` is very
+   welcome.
+
+This is one of the easiest ways to contribute without needing to know the
+protocol deeply - it just needs someone with the tool installed.
+
 ### Improve checkpoint formats
 
 `templates/` defines the portable protocol.

@@ -45,7 +45,7 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [ ] Migration guide for schema bumps
 - [ ] Stronger verification checklist (language-agnostic)
 - [ ] Sample `.paem/` fixture for demos and tests
-- [ ] Verify `paem_checkpoint_guard_codex.py` and `_gemini.py` stdin field names against live installs (currently best-effort from public docs only)
+- [ ] Verify `paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py` stdin field names against live installs (currently best-effort from public docs only) - tracked via the **Hook adapter field verification** issue form
 - [ ] Revisit a Windsurf/Cascade successor adapter once Devin Local's hook surface (if any) stabilizes
 
 ---

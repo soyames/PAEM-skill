@@ -91,6 +91,7 @@ def check_layout() -> None:
         ".github/ISSUE_TEMPLATE/bug_report.yml",
         ".github/ISSUE_TEMPLATE/feature_request.yml",
         ".github/ISSUE_TEMPLATE/question.yml",
+        ".github/ISSUE_TEMPLATE/hook_field_verification.yml",
     ]
     for rel in required_files:
         require_file(rel)
