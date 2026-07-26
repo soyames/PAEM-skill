@@ -129,7 +129,53 @@ Do **not** put secrets, tokens, or private keys in checkpoints.
 
 - Keep **all** checkpoint JSON files for auditability when cheap.
 - Keep **summaries** short so a new session can load memory without reading every checkpoint.
-- If history grows large, archive older checkpoints to `.paem/checkpoints/archive/` and keep the last N hot (e.g. 20).
+- If history grows large, archive older checkpoints (see below) and keep the last N hot.
+
+---
+
+## Archive policy for long projects
+
+Checkpoints are cheap individually but a project running for weeks can
+accumulate hundreds of them. None of that history should ever be required
+reading to resume - `project_summary.md`, `latest_checkpoint.json`, and
+`resume_prompt.md` must always be sufficient on their own. Archiving exists
+to keep the *hot* `.paem/checkpoints/` directory small and fast to scan,
+not to protect against data loss (that's what keeping every checkpoint
+file, plus git, is for).
+
+**When to archive.** Either trigger works; pick whichever fits the project:
+
+- Count-based: once `.paem/checkpoints/` exceeds ~30 files, archive all but
+  the most recent 20.
+- Time-based: once a checkpoint is older than the current milestone (i.e.
+  it describes a milestone that's already fully shipped and verified),
+  it's a candidate regardless of count.
+
+**How to archive.**
+
+1. Move (do not delete) the older checkpoint files to
+   `.paem/checkpoints/archive/`, keeping their original filenames so ids
+   stay traceable.
+2. Before moving a checkpoint, fold anything from it that's still relevant
+   into `project_summary.md`'s "Completed (high level)" and
+   "Architecture snapshot" sections - once archived, a checkpoint should be
+   history, not something a resuming session needs to open.
+3. Never archive `latest_checkpoint.json` itself or the checkpoint it
+   points to.
+4. `.paem/checkpoints/archive/` is still part of `.paem/` - if you commit
+   `.paem/` for team continuity, the archive goes with it. If you don't,
+   it's disposable the same way live checkpoints are.
+
+**What NOT to do:**
+
+- Do not delete checkpoint files outright as an archiving strategy - if
+  someone (or some future session) needs to know exactly what changed
+  three weeks ago, the archive is the only place that's still cheap to
+  check.
+- Do not summarize-and-discard so aggressively that `next_action` history
+  becomes unreconstructable - keep enough of each archived checkpoint's
+  `next_action` and `verification` fields in `project_summary.md` that a
+  human could audit the project's trajectory without un-archiving anything.
 
 ---
 

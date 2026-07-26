@@ -53,10 +53,10 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 
 ## v1.2 - Ergonomics
 
-- [ ] One-command "init `.paem/`" script (optional, still no cloud)
-- [ ] Validate-checkpoint CLI (schema + required fields)
-- [ ] Better archive policy for long projects
-- [ ] More provider examples (Windsurf, Aider, Continue, etc.)
+- [x] One-command "init `.paem/`" script (`scripts/paem_init.py` - optional, still no cloud, refuses to touch an existing `.paem/` without `--force`)
+- [x] Validate-checkpoint CLI (`scripts/validate_checkpoint.py`, schema + required fields, shares `scripts/paem_schema_lib.py` with CI)
+- [x] Better archive policy for long projects (`docs/checkpointing.md` - count/time triggers, fold-before-archive rule, what not to do)
+- [x] More provider examples: Aider (`examples/aider.md`) and Continue (`examples/continue.md`) - both use an explicitly-loaded conventions/rules file, not a skills directory, so they're documented separately from `scripts/install.py` rather than forced into that model. Windsurf intentionally still excluded - see the v1.1 item above and the PLATFORM INTEGRATIONS table in `paem.md`.
 
 ---
 

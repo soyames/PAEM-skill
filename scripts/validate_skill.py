@@ -14,6 +14,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import paem_schema_lib  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
@@ -66,6 +69,8 @@ def check_layout() -> None:
         "examples/gemini.md",
         "examples/antigravity.md",
         "examples/openhands.md",
+        "examples/aider.md",
+        "examples/continue.md",
         "prompts/resume.md",
         "prompts/checkpoint.md",
         "prompts/summarize.md",
@@ -101,6 +106,9 @@ def check_layout() -> None:
         "scripts/paem_checkpoint_guard_gemini.py",
         "scripts/paem_checkpoint_guard_cursor.py",
         "scripts/install.py",
+        "scripts/paem_schema_lib.py",
+        "scripts/validate_checkpoint.py",
+        "scripts/paem_init.py",
         ".github/PULL_REQUEST_TEMPLATE.md",
         ".github/CODEOWNERS",
         ".github/ISSUE_TEMPLATE/config.yml",
@@ -219,78 +227,6 @@ def check_checkpoint_template() -> None:
         warn(f"checkpoint schema_version is {data.get('schema_version')!r}, expected '1.0.0'")
 
 
-def _schema_validate(instance: object, schema: dict, path: str = "$") -> list[str]:
-    """Minimal, dependency-free JSON Schema (2020-12 subset) validator.
-
-    Supports exactly the keywords used under schemas/: type, required,
-    properties, additionalProperties (bool only), items, enum, pattern,
-    minimum, maximum. Deliberately not a general-purpose implementation -
-    this project stays dependency-free rather than pulling in the
-    `jsonschema` package for two small internal schemas. If the schemas
-    grow to need more of the spec, reconsider that tradeoff.
-    """
-    errors: list[str] = []
-
-    type_map = {
-        "string": str,
-        "integer": int,
-        "number": (int, float),
-        "boolean": bool,
-        "object": dict,
-        "array": list,
-        "null": type(None),
-    }
-
-    def check_type(value: object, expected: str) -> bool:
-        py_type = type_map.get(expected)
-        if py_type is None:
-            return True
-        if expected == "integer" and isinstance(value, bool):
-            return False
-        if expected == "number" and isinstance(value, bool):
-            return False
-        return isinstance(value, py_type)
-
-    expected_types = schema.get("type")
-    if expected_types is not None:
-        candidates = [expected_types] if isinstance(expected_types, str) else expected_types
-        if not any(check_type(instance, t) for t in candidates):
-            errors.append(f"{path}: expected type {candidates}, got {type(instance).__name__}")
-            return errors  # further checks would be meaningless
-
-    if "enum" in schema and instance not in schema["enum"]:
-        errors.append(f"{path}: value {instance!r} not in enum {schema['enum']}")
-
-    if "pattern" in schema and isinstance(instance, str):
-        if not re.match(schema["pattern"], instance):
-            errors.append(f"{path}: {instance!r} does not match pattern {schema['pattern']!r}")
-
-    if "minimum" in schema and isinstance(instance, (int, float)) and not isinstance(instance, bool):
-        if instance < schema["minimum"]:
-            errors.append(f"{path}: {instance} below minimum {schema['minimum']}")
-
-    if "maximum" in schema and isinstance(instance, (int, float)) and not isinstance(instance, bool):
-        if instance > schema["maximum"]:
-            errors.append(f"{path}: {instance} above maximum {schema['maximum']}")
-
-    if isinstance(instance, dict):
-        for req in schema.get("required", []):
-            if req not in instance:
-                errors.append(f"{path}: missing required field '{req}'")
-        properties = schema.get("properties", {})
-        for key, value in instance.items():
-            if key in properties:
-                errors.extend(_schema_validate(value, properties[key], f"{path}.{key}"))
-            elif schema.get("additionalProperties") is False:
-                errors.append(f"{path}: unexpected additional property '{key}'")
-
-    if isinstance(instance, list) and "items" in schema:
-        for i, item in enumerate(instance):
-            errors.extend(_schema_validate(item, schema["items"], f"{path}[{i}]"))
-
-    return errors
-
-
 def check_schemas_are_valid_json() -> None:
     """Both schema files must at least parse as JSON."""
     for rel in ("schemas/checkpoint.schema.json", "schemas/execution_report.schema.json"):
@@ -329,7 +265,7 @@ def check_checkpoint_schema() -> None:
         except json.JSONDecodeError as exc:
             error(f"{rel} is not valid JSON: {exc}")
             continue
-        for msg in _schema_validate(instance, schema):
+        for msg in paem_schema_lib.validate(instance, schema):
             error(f"{rel} fails schema: {msg}")
 
 
@@ -383,6 +319,9 @@ def check_checkpoint_guard_compiles() -> None:
         "scripts/paem_checkpoint_guard_gemini.py",
         "scripts/paem_checkpoint_guard_cursor.py",
         "scripts/install.py",
+        "scripts/paem_schema_lib.py",
+        "scripts/validate_checkpoint.py",
+        "scripts/paem_init.py",
     ]
     for rel in guard_scripts:
         path = ROOT / rel

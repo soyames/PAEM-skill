@@ -19,6 +19,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   somewhere" prose in `examples/codex.md` and `examples/antigravity.md`
   that never referenced those tools' real skills mechanism.
 
+### Added (v1.2 ergonomics)
+
+- `scripts/paem_init.py`: one-command `.paem/` initializer. Copies the
+  blank `templates/` skeleton into `--target`, plus a filled, schema-valid
+  `checkpoint-000.json` baseline (so a brand new `.paem/` is internally
+  consistent instead of full of empty placeholders). Refuses to touch an
+  existing `.paem/` unless `--force` is passed. Still no cloud - only
+  touches files under `--target`.
+- `scripts/validate_checkpoint.py`: standalone CLI to validate one or more
+  checkpoint JSON files against `schemas/checkpoint.schema.json` (or a
+  `--schema` override), for pre-commit hooks or an agent checking its own
+  checkpoint before writing it.
+- `scripts/paem_schema_lib.py`: the JSON Schema subset validator extracted
+  out of `scripts/validate_skill.py` into a shared module, so
+  `validate_skill.py` (CI) and `validate_checkpoint.py` (CLI) use the exact
+  same validation logic instead of two copies drifting apart.
+- `docs/checkpointing.md`: expanded "Archive policy for long projects"
+  section - count/time-based triggers for archiving, a fold-before-archive
+  rule so `project_summary.md` stays sufficient without un-archiving
+  anything, and an explicit "what not to do" (don't delete outright, don't
+  summarize so aggressively that `next_action` history becomes
+  unreconstructable).
+- `examples/aider.md` and `examples/continue.md`: two more provider guides.
+  Both tools use an explicitly-loaded conventions/rules file rather than a
+  skills-directory scan (verified against each tool's own docs), so their
+  install steps are documented separately rather than folded into
+  `scripts/install.py`'s directory-copy model. Neither has a documented
+  lifecycle-hook system, so neither gets a `paem_checkpoint_guard_*`
+  adapter - the `PLATFORM INTEGRATIONS` table in `paem.md` says so
+  explicitly rather than silently omitting them.
+
 ### Added (v1.1 protocol hardening)
 
 - `schemas/checkpoint.schema.json`: formal JSON Schema for

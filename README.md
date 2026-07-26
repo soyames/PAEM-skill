@@ -64,20 +64,27 @@ PAEM is designed to work with any AI that can **read/write project files** and f
 | Cursor | [examples/cursor.md](examples/cursor.md) |
 | Antigravity | [examples/antigravity.md](examples/antigravity.md) |
 | OpenHands | [examples/openhands.md](examples/openhands.md) |
+| Aider | [examples/aider.md](examples/aider.md) - conventions file, not a skills directory |
+| Continue | [examples/continue.md](examples/continue.md) - rules file, not a skills directory |
 | Grok and other capable LLMs | Load `SKILL.md` / `paem.md` the same way |
 
 Compatibility is **protocol-level** (files + instructions), not a certified integration with every vendor product.
 
-By 2026 every tool above converged on the same open skill-packaging format
-([agentskills.io](https://agentskills.io)) - a folder with `SKILL.md` in it,
-auto-discovered from a tool-specific directory. `scripts/install.py` copies
-this repo's runtime files to the right directory for whichever tool you
-name:
+Claude Code, Cursor, Codex CLI, Gemini CLI, and Antigravity converged on the
+same open skill-packaging format ([agentskills.io](https://agentskills.io))
+- a folder with `SKILL.md` in it, auto-discovered from a tool-specific
+directory. `scripts/install.py` copies this repo's runtime files to the
+right directory for whichever of those five you name:
 
 ```bash
 python scripts/install.py --list                                            # see every provider's path
 python scripts/install.py --provider codex --scope project --target ~/code/my-app
 ```
+
+Aider and Continue don't have that directory-scan mechanism - they use an
+explicitly-loaded conventions/rules file instead, so their install steps
+live only in [examples/aider.md](examples/aider.md) and
+[examples/continue.md](examples/continue.md), not in `install.py`.
 
 ---
 

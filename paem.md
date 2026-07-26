@@ -91,6 +91,8 @@ PAEM should work with any capable AI system including:
 - Antigravity
 - Cursor
 - OpenHands
+- Aider
+- Continue
 - Grok
 - OpenAI / Anthropic APIs
 - Local LLMs
@@ -524,6 +526,8 @@ exceeded - only has to be right once.
 | Gemini CLI | Stop-equivalent | exit 2 + stderr, or JSON `decision`/`continue` | Documented contract matches; stdin field names best-effort - `scripts/paem_checkpoint_guard_gemini.py` |
 | Cursor | `stop` | `followup_message` (best-effort nudge) | Cursor's own docs describe `stop` as non-blocking in practice - do not rely on this for hard enforcement - `scripts/paem_checkpoint_guard_cursor.py` |
 | Windsurf | - | - | Skipped: Cascade (Windsurf's local agent) reaches end-of-life 2026-07-01 in favor of Devin Local; revisit once that host's hook surface is stable |
+| Aider | - | - | No documented lifecycle-hook system as of this writing; rely on the prompted protocol (`examples/aider.md`) |
+| Continue | - | - | No documented lifecycle-hook system as of this writing; rely on the prompted protocol (`examples/continue.md`) |
 
 "Best-effort" above means: the block/allow exit-code contract is publicly
 documented and matches the verified Claude Code adapter, but the specific
