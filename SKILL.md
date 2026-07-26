@@ -67,8 +67,16 @@ Read (if present):
 - `AGENTS.md` at the project root, if present - treat it as the repo's
   how-to-behave conventions, and add a one-line pointer to `.paem/` (from
   `templates/agents_md_snippet.md`) if it doesn't already have one
+- `.paem/provider_budgets.md`, if present - user-defined soft time
+  thresholds for proactive checkpointing (no provider exposes real quota
+  remaining, so this is a heuristic, not a guarantee)
 
 Determine exactly where execution stopped. **Never assume. Always verify.**
+
+If work is being fanned out to subagents (including cross-provider
+orchestration), only the top-level session writes to `.paem/` - subagents
+report results back rather than writing checkpoints themselves. See
+"Single-writer principle" in `paem.md`.
 
 If `.paem/` does not exist, initialize it from the user's goal and current repo, then create Checkpoint 0 (baseline).
 
@@ -161,12 +169,17 @@ Provide a concise report covering:
 
 Every session must end with a **single, executable next action** a future session can start without re-planning.
 
-## Optional: deterministic enforcement on Claude Code
+## Optional: deterministic enforcement via hooks
 
-The phases above rely on the model remembering to checkpoint. On Claude Code
-you can additionally wire `scripts/paem_checkpoint_guard.py` as a `Stop`
-hook so a session can't end with stale, unverified `.paem/` state - see
-`examples/claude.md`. This is additive; skip it on any other provider.
+The phases above rely on the model remembering to checkpoint. On hosts with
+a hook system, wire the matching adapter as a stop-of-turn hook so a
+session can't (or is at least strongly nudged not to) end with stale,
+unverified `.paem/` state: `scripts/paem_checkpoint_guard.py` (Claude Code,
+verified), `_codex.py` / `_gemini.py` (documented contract, best-effort
+field names), `_cursor.py` (best-effort nudge only - Cursor's `stop` hook
+isn't a reliable hard block). See the PLATFORM INTEGRATIONS table in
+`paem.md` and the matching `examples/<provider>.md`. This is additive; skip
+it entirely and the prompted protocol still works the same.
 
 ## Full protocol
 

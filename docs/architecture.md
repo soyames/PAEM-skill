@@ -148,6 +148,20 @@ already exists, or suggests creating one.
 
 ---
 
+## Multi-agent and subagent systems
+
+Orchestrated hosts increasingly fan work out to subagents, sometimes across
+different models. `.paem/` deliberately has no locking mechanism - instead
+PAEM enforces a **single-writer principle**: only the top-level
+orchestrating session writes `.paem/`. Subagents return results; the
+orchestrator folds them into its own next checkpoint (optionally recorded
+in the checkpoint's `subagents` array). This avoids race conditions by
+construction instead of by coordination, and it's why the checkpoint guards
+are wired to a host's top-level `Stop` event only, never to a
+`SubagentStop`-style event.
+
+---
+
 ## Future direction
 
 See [roadmap.md](roadmap.md). The long-term ambition is a **shared execution protocol** so tools can hand off mid-project using the same checkpoint and resume conventions.

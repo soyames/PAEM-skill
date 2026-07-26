@@ -61,6 +61,9 @@ Optional but recommended:
 - `branch`, `commit_hash`
 - `milestone`, `project_name`
 - `session_notes`
+- `provider` - which host/model this session ran on (`claude-code`, `codex`, `gemini-cli`, ...)
+- `session.started_at` / `session.elapsed_minutes` - self-reported wall-clock time, used for the rate-limit heuristic (see `templates/provider_budgets.md`); never a real quota reading
+- `subagents` - results folded in from any subagents used, per the single-writer principle (see `docs/architecture.md`)
 
 ### Naming
 
@@ -138,7 +141,9 @@ Do **not** put secrets, tokens, or private keys in checkpoints.
 | Code done, no checkpoint | On resume, rebuild checkpoint from git + scan |
 | Conflicting checkpoints | Prefer highest id with matching commit; repair summary |
 | Half-written checkpoint | Write to temp file then rename; or write new id |
-| Model forgets to checkpoint before stopping | On Claude Code, wire `scripts/paem_checkpoint_guard.py` as a `Stop` hook so the session can't end with stale `.paem/` state - see `examples/claude.md` |
+| Model forgets to checkpoint before stopping | On hosts with a hook system, wire the matching `scripts/paem_checkpoint_guard*.py` adapter - see the PLATFORM INTEGRATIONS table in `paem.md` |
+| Multiple subagents write conflicting checkpoints | Don't let them - only the orchestrating session writes `.paem/` (single-writer principle, `docs/architecture.md`) |
+| Time-budget heuristic fires too early/late | Expected - it's a self-tracked estimate, not a real quota reading. Adjust the threshold in `.paem/provider_budgets.md` |
 
 ---
 

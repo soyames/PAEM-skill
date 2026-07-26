@@ -154,7 +154,9 @@ Maintain project memory under `.paem/`:
 │   └── checkpoint-NNN.json
 ├── reports/
 │   └── execution_report-NNN.md
-└── resume_prompt.md        # Paste-ready prompt for the next session
+├── resume_prompt.md        # Paste-ready prompt for the next session
+├── provider_budgets.md     # Optional: user-defined soft time thresholds
+└── .guard/                 # Optional: checkpoint-guard session markers, safe to delete
 ```
 
 Use the skill `templates/` as the canonical shapes for checkpoint, summary, and report files.
@@ -205,6 +207,8 @@ Read:
 - coding conventions
 - repository status
 - `AGENTS.md` at the project root, if present (see RELATIONSHIP TO AGENTS.md)
+- `.paem/provider_budgets.md`, if present (see PLATFORM INTEGRATIONS and
+  "On predicting rate limits" under Phase 5)
 
 Determine exactly where execution previously stopped.
 
@@ -274,6 +278,33 @@ Also update:
 - `resume_prompt.md`
 - optional execution report
 
+### Single-writer principle (subagents and multi-agent systems)
+
+Many hosts now fan work out to subagents, sometimes across different
+models or providers within one orchestrated run. `.paem/` has no locking
+mechanism, and it should not need one: only the top-level orchestrating
+session - the one a human is actually driving, or the one that owns the
+overall task - writes to `.paem/`. Subagents are workers, not independent
+PAEM sessions:
+
+- A subagent returns its results (files touched, what it verified, what
+  remains) to the orchestrator; it does not write `latest_checkpoint.json`
+  or `task_list.md` itself.
+- The orchestrator folds subagent results into its own next checkpoint,
+  optionally listing them under the checkpoint's `subagents` array (see
+  `templates/checkpoint.json`) for auditability.
+- If a subagent is itself long-running enough to need its own recovery
+  (rare, but possible for a large delegated task), give it a scoped area
+  under `.paem/subagents/<id>/` rather than letting it touch the shared
+  top-level files.
+
+This avoids race conditions by construction rather than by locking: there
+is exactly one writer at any point in the protocol. On hosts that expose a
+separate subagent-completion hook (e.g. Claude Code's and Codex CLI's
+`SubagentStop`), do not wire the checkpoint guard to it - blocking on every
+internal subagent's completion is noisy and violates single-writer; only
+the top-level `Stop` event should be enforced.
+
 ---
 
 ## Phase 5 - Detect Interruptions
@@ -305,6 +336,27 @@ Continuously monitor for:
 - interrupted execution
 
 When any of these are likely, prioritize flushing state and writing recovery materials **before** continuing optional work.
+
+### On predicting rate limits
+
+No AI provider exposes "quota remaining" to an agent session - there is no
+API call that answers "how many messages/tokens do I have left," and limits
+vary by plan and change over time. PAEM cannot reliably predict a rate limit
+before it happens. Two weaker but real signals are worth using instead:
+
+1. **Self-tracked elapsed time.** Record `session.started_at` in each
+   checkpoint (see `templates/checkpoint.json`). If the user has filled in
+   `.paem/provider_budgets.md` with a conservative soft threshold for the
+   current provider, treat crossing it as a proactive checkpoint trigger -
+   not because the limit is confirmed close, but because losing work past
+   that point becomes more likely and cheaper to avoid than to recover from.
+2. **Reactive detection.** If a rate-limit or quota message actually
+   appears in the conversation, that is a real, immediate signal - stronger
+   than the time heuristic. Checkpoint right away, even if nothing else
+   about the state looks stale.
+
+Neither mechanism is a countdown timer. Both exist to make "checkpoint
+proactively" more likely than "lose the last N minutes of work."
 
 ---
 
@@ -453,15 +505,36 @@ Whenever execution resumes:
 # PLATFORM INTEGRATIONS (OPTIONAL)
 
 The phases above are enforced by instruction alone, so they work on any
-capable, file-reading agent - that provider-agnostic core is not optional.
+capable, file-reading agent - that provider-agnostic core is not optional
+and never depends on any of what follows.
 
-On platforms that support deterministic hooks, layer enforcement on top so
-checkpointing is not only self-reported. Claude Code's `Stop` hook can run a
-real script that checks whether `.paem/` state is stale relative to the
-working tree and, if so, blocks the session from ending until a fresh
-checkpoint is written - see `scripts/paem_checkpoint_guard.py` and
-`examples/claude.md` for the wiring. This is additive: skip it entirely and
-the prompted protocol above still works the same.
+By 2026 most major coding agent hosts converged on a similar hook
+architecture (fire a script at defined lifecycle points, read JSON on
+stdin, signal block/allow via exit code or JSON on stdout). Where that
+exists, PAEM can layer real enforcement on top so checkpointing is not only
+self-reported. All adapters share one detection core
+(`scripts/paem_guard_core.py`) so the actual logic - is `.paem/` stale,
+does the transcript mention a rate limit, has the time budget been
+exceeded - only has to be right once.
+
+| Host | Hook event | Block mechanism | Status |
+|------|-----------|------------------|--------|
+| Claude Code | `Stop` | exit 2 + stderr | Verified - `scripts/paem_checkpoint_guard.py`, tested locally |
+| Codex CLI (OpenAI) | `Stop` | exit 2 + stderr | Documented contract matches Claude Code's; stdin field names best-effort - `scripts/paem_checkpoint_guard_codex.py` |
+| Gemini CLI | Stop-equivalent | exit 2 + stderr, or JSON `decision`/`continue` | Documented contract matches; stdin field names best-effort - `scripts/paem_checkpoint_guard_gemini.py` |
+| Cursor | `stop` | `followup_message` (best-effort nudge) | Cursor's own docs describe `stop` as non-blocking in practice - do not rely on this for hard enforcement - `scripts/paem_checkpoint_guard_cursor.py` |
+| Windsurf | - | - | Skipped: Cascade (Windsurf's local agent) reaches end-of-life 2026-07-01 in favor of Devin Local; revisit once that host's hook surface is stable |
+
+"Best-effort" above means: the block/allow exit-code contract is publicly
+documented and matches the verified Claude Code adapter, but the specific
+stdin field names an adapter reads (working directory, session id) have not
+been confirmed against a live install the way the Claude Code one has. Each
+adapter tries several plausible field names and falls back to `os.getcwd()`
+rather than failing silently on a wrong guess. If your version of a tool
+uses different fields, please open an issue.
+
+This whole section is additive: skip it entirely on any host, including
+Claude Code, and the prompted protocol above still works the same.
 
 ---
 

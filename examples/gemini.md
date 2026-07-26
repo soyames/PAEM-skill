@@ -43,3 +43,22 @@ Gemini is a common fallback when another provider is rate-limited. Because `.pae
 1. Stop on Claude/Codex with a checkpoint
 2. Open Gemini on the same clone
 3. Continue without re-planning the entire system
+
+## Deterministic enforcement (optional)
+
+Gemini CLI's hooks are enabled by default (v0.26.0+). Copy
+`scripts/paem_checkpoint_guard_gemini.py` **and** `scripts/paem_guard_core.py`
+into `.gemini/` (same directory), then add a Stop-equivalent hook in
+`.gemini/settings.json` pointing at the guard script. It uses the same exit-code
+contract as Claude Code (exit 2 = block, stderr = reason) rather than
+emitting JSON on stdout, since Gemini CLI requires stdout to be pure JSON
+or nothing at all when hooks do write JSON - bare exit codes sidestep that
+entirely. As with the Codex adapter, the block/allow contract is
+documented and verified against the pattern; the specific stdin field
+names it reads have not been checked against a live Gemini CLI install.
+
+## Tips
+
+- Fill in `.paem/provider_budgets.md` with your actual Gemini quota window
+  (free tier vs. paid differ a lot) so proactive checkpointing has a real
+  threshold instead of guessing.

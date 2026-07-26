@@ -31,6 +31,10 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [x] Package smoke tests (`scripts/validate_skill.py`) + CI
 - [x] AGENTS.md integration (`templates/agents_md_snippet.md`, read/append during Phase 1)
 - [x] Deterministic Stop-hook enforcement for Claude Code (`scripts/paem_checkpoint_guard.py`)
+- [x] Shared detection core (`scripts/paem_guard_core.py`) + adapters for Codex CLI and Gemini CLI (documented contract, best-effort field names)
+- [x] Best-effort Cursor adapter using `followup_message` (Cursor's `stop` hook isn't a reliable hard block)
+- [x] Rate-limit heuristics: self-tracked elapsed time against `.paem/provider_budgets.md`, reactive transcript phrase scan
+- [x] Single-writer principle for subagents/multi-agent orchestration + `subagents` checkpoint field
 
 ---
 
@@ -41,6 +45,8 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [ ] Migration guide for schema bumps
 - [ ] Stronger verification checklist (language-agnostic)
 - [ ] Sample `.paem/` fixture for demos and tests
+- [ ] Verify `paem_checkpoint_guard_codex.py` and `_gemini.py` stdin field names against live installs (currently best-effort from public docs only)
+- [ ] Revisit a Windsurf/Cascade successor adapter once Devin Local's hook surface (if any) stabilizes
 
 ---
 

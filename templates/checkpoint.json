@@ -6,6 +6,13 @@
   "branch": "main",
   "commit_hash": null,
   "milestone": "Authentication",
+  "provider": "claude-code",
+  "session": {
+    "started_at": "2026-07-26T11:40:00Z",
+    "elapsed_minutes": 20,
+    "note": "Self-reported wall-clock time. No provider exposes real quota-remaining to an agent session, so this is a heuristic for proactive checkpointing, not a guarantee. See templates/provider_budgets.md."
+  },
+  "subagents": [],
   "current_task": {
     "id": "T-003",
     "title": "Implement registration endpoint",

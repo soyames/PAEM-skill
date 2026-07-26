@@ -68,8 +68,10 @@ Everything above relies on the model remembering to checkpoint before
 stopping. Claude Code's `Stop` hook can make that a real, deterministic
 check instead of a self-reported one:
 
-1. Copy `scripts/paem_checkpoint_guard.py` into your project (any path is
-   fine, e.g. `.claude/hooks/paem_checkpoint_guard.py`).
+1. Copy `scripts/paem_checkpoint_guard.py` **and** `scripts/paem_guard_core.py`
+   into your project, in the same directory (any path is fine, e.g.
+   `.claude/hooks/`) - the guard imports the core module by relative path,
+   so they must sit side by side.
 2. Add it to `.claude/settings.json`:
 
 ```json

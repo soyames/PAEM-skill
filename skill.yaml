@@ -57,6 +57,7 @@ runtime:
   optional:
     - git
     - AGENTS.md (repo-wide agent conventions, cross-tool standard)
-    - deterministic hooks (e.g. Claude Code Stop hook, for enforced checkpointing)
+    - deterministic hooks (Claude Code, Codex CLI, Gemini CLI verified/documented; Cursor best-effort; for enforced checkpointing)
+    - .paem/provider_budgets.md (user-defined soft time thresholds; no provider exposes real quota)
 
 language: en

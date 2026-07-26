@@ -79,7 +79,12 @@ def check_layout() -> None:
         "templates/task_list.md",
         "templates/completed_tasks.md",
         "templates/agents_md_snippet.md",
+        "templates/provider_budgets.md",
+        "scripts/paem_guard_core.py",
         "scripts/paem_checkpoint_guard.py",
+        "scripts/paem_checkpoint_guard_codex.py",
+        "scripts/paem_checkpoint_guard_gemini.py",
+        "scripts/paem_checkpoint_guard_cursor.py",
         ".github/PULL_REQUEST_TEMPLATE.md",
         ".github/CODEOWNERS",
         ".github/ISSUE_TEMPLATE/config.yml",
@@ -237,16 +242,24 @@ def check_gitignore() -> None:
 
 
 def check_checkpoint_guard_compiles() -> None:
-    """The Stop-hook guard script must at least be syntactically valid."""
+    """The Stop-hook guard scripts must at least be syntactically valid."""
     import py_compile
 
-    path = ROOT / "scripts" / "paem_checkpoint_guard.py"
-    if not path.is_file():
-        return  # already reported by check_layout()
-    try:
-        py_compile.compile(str(path), doraise=True)
-    except py_compile.PyCompileError as exc:
-        error(f"scripts/paem_checkpoint_guard.py does not compile: {exc}")
+    guard_scripts = [
+        "scripts/paem_guard_core.py",
+        "scripts/paem_checkpoint_guard.py",
+        "scripts/paem_checkpoint_guard_codex.py",
+        "scripts/paem_checkpoint_guard_gemini.py",
+        "scripts/paem_checkpoint_guard_cursor.py",
+    ]
+    for rel in guard_scripts:
+        path = ROOT / rel
+        if not path.is_file():
+            continue  # already reported by check_layout()
+        try:
+            py_compile.compile(str(path), doraise=True)
+        except py_compile.PyCompileError as exc:
+            error(f"{rel} does not compile: {exc}")
 
 
 def dry_run_paem_init() -> None:

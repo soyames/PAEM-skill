@@ -26,6 +26,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stale, uncheckpointed `.paem/` state; fails open on error and respects
   `PAEM_SKIP_GUARD=1`
 - `docs/architecture.md` section on PAEM's relationship to AGENTS.md
+- Shared checkpoint-guard detection core (`scripts/paem_guard_core.py`) and
+  adapters for Codex CLI (`_codex.py`) and Gemini CLI (`_gemini.py`) - both
+  hosts' documented `Stop` exit-code contract (exit 2 + stderr) matches
+  Claude Code's; stdin field names are best-effort, not independently
+  verified against a live install
+- Best-effort Cursor adapter (`_cursor.py`) using the documented
+  `followup_message` mechanism, since Cursor's own docs describe `stop`
+  hooks as non-blocking in practice
+- Rate-limit heuristics: self-tracked elapsed time compared against
+  user-defined thresholds in `.paem/provider_budgets.md`
+  (`templates/provider_budgets.md`), plus a best-effort raw-text scan of
+  the transcript for rate-limit phrasing - no provider exposes real quota
+  to an agent session, so both are explicitly heuristics, not guarantees
+- Single-writer principle for subagent/multi-agent orchestration
+  (`docs/architecture.md`, `paem.md`) and an optional `subagents` field on
+  the checkpoint schema
+- `PLATFORM INTEGRATIONS` table in `paem.md` covering Claude Code, Codex
+  CLI, Gemini CLI, Cursor, and why Windsurf is explicitly skipped
+  (Cascade reaches end-of-life 2026-07-01)
 
 ## [1.0.0] - 2026-07-26
 
