@@ -6,16 +6,25 @@ Antigravity sessions, like other agent environments, can stop on quotas, tool er
 
 ## Install
 
-1. Clone or copy PAEM into a location the agent can read, e.g.:
+Antigravity has a real skills system (an open standard shared with a few
+other tools - see [agentskills.io](https://agentskills.io)): a folder with a
+`SKILL.md` file, discovered automatically, no prompting required.
 
-```text
-skills/paem/
-vendor/paem/
+```bash
+# workspace-scoped (this project only)
+python scripts/install.py --provider antigravity --scope project --target /path/to/your/app
+
+# global (every workspace)
+python scripts/install.py --provider antigravity --scope global
 ```
 
-2. Ensure the agent loads `SKILL.md` or is told to follow `paem.md`.
+That's `.agents/skills/paem/` (workspace) or `~/.gemini/config/skills/paem/`
+(global) if you'd rather copy it by hand. `.agents/skills/` at project scope
+is the same directory Codex CLI reads, so this also covers Codex for the
+same project.
 
-3. Confirm the working directory is your **software project root** (where `.paem/` should be created), not only the skill folder.
+Confirm the working directory is your **software project root** (where
+`.paem/` should be created), not only the skill folder.
 
 ---
 

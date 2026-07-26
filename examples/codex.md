@@ -6,26 +6,24 @@ Codex and ChatGPT coding sessions end often (limits, context, product UI). PAEM 
 
 ## Install
 
-There is no single universal skills path for every ChatGPT/Codex setup. Practical options:
+Codex CLI has a real skills system (`~/.codex/skills/<name>/` for global,
+`.agents/skills/<name>/` for project) - this is a package, not a paste-in
+prompt:
 
-### Option A - Repo-bundled protocol
+```bash
+# project-scoped (this repo only)
+python scripts/install.py --provider codex --scope project --target /path/to/your/app
 
-1. Add this skill as a submodule, subtree, or `vendor/paem/` folder in your project.
-2. At session start:
-
-```text
-Follow the PAEM protocol in vendor/paem/paem.md (or docs path you chose).
-Use .paem/ for all durable state.
+# global (every project)
+python scripts/install.py --provider codex --scope global
 ```
 
-### Option B - Paste protocol once per project
+`.agents/skills/` is the shared open-standard directory - Antigravity reads
+the exact same path at project scope, so this one install also covers that
+tool for the same project.
 
-1. Paste a short version: load `SKILL.md` body + point to templates.
-2. Immediately initialize `.paem/` so later sessions only need the resume prompt.
-
-### Option C - Custom instructions
-
-Put in custom instructions / project instructions:
+If you're on a ChatGPT surface without a skills directory (not the Codex
+CLI), fall back to custom instructions:
 
 ```text
 For long engineering tasks, use PAEM: checkpoint to .paem/, verify before continue,

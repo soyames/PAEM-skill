@@ -68,6 +68,17 @@ PAEM is designed to work with any AI that can **read/write project files** and f
 
 Compatibility is **protocol-level** (files + instructions), not a certified integration with every vendor product.
 
+By 2026 every tool above converged on the same open skill-packaging format
+([agentskills.io](https://agentskills.io)) - a folder with `SKILL.md` in it,
+auto-discovered from a tool-specific directory. `scripts/install.py` copies
+this repo's runtime files to the right directory for whichever tool you
+name:
+
+```bash
+python scripts/install.py --list                                            # see every provider's path
+python scripts/install.py --provider codex --scope project --target ~/code/my-app
+```
+
 ---
 
 ## Quick Start

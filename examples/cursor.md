@@ -8,11 +8,14 @@ Cursor chats are excellent for multi-file work and also excellent at filling the
 
 ### Project skill (recommended)
 
-```text
-<your-repo>/.cursor/skills/paem/SKILL.md
+```bash
+python scripts/install.py --provider cursor --scope project --target /path/to/your/app
 ```
 
-Copy the full skill package (or symlink) so Cursor can load `SKILL.md`.
+That's `<your-repo>/.cursor/skills/paem/` if you'd rather copy it by hand.
+Cursor doesn't have a personal/global skills directory the way Claude Code
+and Codex CLI do - skills are project-scoped only, so this needs to run once
+per repo.
 
 ### Rules fallback
 

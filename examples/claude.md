@@ -8,26 +8,17 @@ Works with **Claude Code**, **Claude.ai** projects, and other Claude surfaces th
 
 ### Claude Code (recommended)
 
-Copy or clone this skill into a skills directory Claude Code loads, for example:
+```bash
+# project-scoped (this repo only)
+python scripts/install.py --provider claude-code --scope project --target /path/to/your/app
 
-```text
-~/.claude/skills/paem/
+# global (every project)
+python scripts/install.py --provider claude-code --scope global
 ```
 
-or project-local:
-
-```text
-<your-repo>/.claude/skills/paem/
-```
-
-Ensure at least:
-
-- `SKILL.md`
-- `paem.md`
-- `templates/`
-- `prompts/` (optional but useful)
-
-Claude Code discovers skills via `SKILL.md` frontmatter (`name: paem`).
+That's `~/.claude/skills/paem/` (global) or `<your-repo>/.claude/skills/paem/`
+(project) if you'd rather copy it by hand. Claude Code discovers skills via
+`SKILL.md` frontmatter (`name: paem`).
 
 ### Claude.ai / web
 

@@ -35,6 +35,7 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [x] Best-effort Cursor adapter using `followup_message` (Cursor's `stop` hook isn't a reliable hard block)
 - [x] Rate-limit heuristics: self-tracked elapsed time against `.paem/provider_budgets.md`, reactive transcript phrase scan
 - [x] Single-writer principle for subagents/multi-agent orchestration + `subagents` checkpoint field
+- [x] Cross-provider installer (`scripts/install.py`) copying skill files to each host's real skills directory (Claude Code, Codex CLI, Gemini CLI, Cursor, Antigravity)
 
 ---
 

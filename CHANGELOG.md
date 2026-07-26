@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (install)
+
+- `scripts/install.py`: a real cross-provider installer. Every tool in
+  `examples/` (Claude Code, Codex CLI, Gemini CLI, Antigravity, Cursor) now
+  has a genuine, independently-verified skills directory as of 2026, part
+  of the shared open `agentskills.io` packaging standard - this script
+  copies the runtime files to the correct one for `--provider X --scope
+  {project,global}`. `.agents/skills/` is shared by Codex and Antigravity at
+  project scope, so one install covers both. Replaces vague "clone it
+  somewhere" prose in `examples/codex.md` and `examples/antigravity.md`
+  that never referenced those tools' real skills mechanism.
+
 ### Changed
 
 - README claims tightened to match real scope (skill/protocol, not a background daemon)
