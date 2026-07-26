@@ -44,6 +44,33 @@ def _first_present(payload: dict, keys: tuple[str, ...]) -> str | None:
     return None
 
 
+def _warn_if_unmatched(payload: dict, cwd_matched: bool, session_matched: bool) -> None:
+    """Make best-effort field guessing observable instead of silently guessing.
+
+    This only writes to stderr (hook logs), never to the blocking message the
+    agent sees, so it does not spam the conversation. It fires whenever a
+    non-empty stdin payload didn't contain any of the field names this
+    adapter was written against - a strong signal the guess is wrong for your
+    Codex CLI version.
+    """
+    if not payload:
+        return  # no JSON on stdin at all; nothing to diagnose
+    missing = []
+    if not cwd_matched:
+        missing.append(f"working-directory key (tried: {', '.join(_CWD_KEYS)})")
+    if not session_matched:
+        missing.append(f"session-id key (tried: {', '.join(_SESSION_KEYS)})")
+    if missing:
+        sys.stderr.write(
+            "PAEM codex guard: stdin payload didn't match the expected "
+            + " or ".join(missing)
+            + ". Falling back to a safe default (cwd via os.getcwd(), no "
+            "session id). This adapter's field names are best-effort - please "
+            "open the 'Hook adapter field verification' issue with your "
+            "actual payload keys so this can be corrected.\n"
+        )
+
+
 def main() -> int:
     if os.environ.get("PAEM_SKIP_GUARD") == "1":
         return EXIT_ALLOW
@@ -58,8 +85,10 @@ def main() -> int:
     if payload.get("stop_hook_active") or payload.get("hook_already_active"):
         return EXIT_ALLOW
 
-    cwd = _first_present(payload, _CWD_KEYS) or os.getcwd()
+    cwd_value = _first_present(payload, _CWD_KEYS)
     session_id = _first_present(payload, _SESSION_KEYS)
+    _warn_if_unmatched(payload, cwd_value is not None, session_id is not None)
+    cwd = cwd_value or os.getcwd()
     transcript_path = payload.get("transcript_path")
 
     try:

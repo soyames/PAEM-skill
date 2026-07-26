@@ -37,6 +37,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from paem_guard_core import evaluate  # noqa: E402
 
 
+def _warn_if_unmatched(payload: dict, cwd_matched: bool, session_matched: bool) -> None:
+    """Make best-effort field guessing observable instead of silently guessing.
+
+    Writes to stderr (hook logs) only, never to the followup_message the
+    agent sees. Fires whenever a non-empty stdin payload lacked the fields
+    this adapter was written against.
+    """
+    if not payload:
+        return
+    missing = []
+    if not cwd_matched:
+        missing.append("non-empty 'workspace_roots' array")
+    if not session_matched:
+        missing.append("'conversation_id' key")
+    if missing:
+        sys.stderr.write(
+            "PAEM cursor guard: stdin payload was missing the expected "
+            + " and ".join(missing)
+            + ". Falling back to a safe default (cwd via os.getcwd(), no "
+            "session id). This adapter's field names are best-effort - please "
+            "open the 'Hook adapter field verification' issue with your "
+            "actual payload keys so this can be corrected.\n"
+        )
+
+
 def main() -> int:
     if os.environ.get("PAEM_SKIP_GUARD") == "1":
         print("{}")
@@ -48,8 +73,9 @@ def main() -> int:
         payload = {}
 
     workspace_roots = payload.get("workspace_roots") or []
-    cwd = workspace_roots[0] if workspace_roots else os.getcwd()
     session_id = payload.get("conversation_id")
+    _warn_if_unmatched(payload, bool(workspace_roots), session_id is not None)
+    cwd = workspace_roots[0] if workspace_roots else os.getcwd()
 
     try:
         should_block, message = evaluate(

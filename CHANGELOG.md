@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- SKILL.md frontmatter description no longer says checkpointing happens
+  "automatically" - it's an agent-followed protocol by default, only
+  enforced if the optional Stop-hook guard is wired up. Overclaimed the
+  mechanism relative to what's actually guaranteed without the hook.
+- `paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py` now write
+  a diagnostic to stderr (hook logs only, never the agent-facing message)
+  when the stdin payload doesn't match any of the field names the adapter
+  guesses at. Previously a wrong guess failed silently to a safe default -
+  now it's visible that the guess was wrong, so users can act on the "Hook
+  adapter field verification" issue form instead of unknowingly running a
+  guard that never fires.
 - README claims tightened to match real scope (skill/protocol, not a background daemon)
 - Removed generic Contributor Covenant `CODE_OF_CONDUCT.md`
 

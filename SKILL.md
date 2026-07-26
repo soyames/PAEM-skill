@@ -3,8 +3,11 @@ name: paem
 description: >
   Persistent AI Execution Manager (PAEM). Use for long-running software engineering
   projects that must survive rate limits, daily quotas, context exhaustion, crashes,
-  network failures, and restarts. Automatically checkpoints progress, compresses
-  project memory, verifies state before continuing, and prepares resume prompts.
+  network failures, and restarts. Follows a checkpoint protocol to persist progress,
+  compresses project memory, verifies state before continuing, and prepares resume
+  prompts. (Checkpointing is agent-followed by default; it becomes enforced only if
+  you wire up the optional Stop-hook guard - see "Optional: deterministic enforcement
+  via hooks" below.)
   Triggers: /paem, "use PAEM", "checkpoint this", "resume from checkpoint",
   "continue long project", "recover from rate limit", "persistent execution",
   multi-session engineering, survive quota, don't lose progress.
