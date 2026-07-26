@@ -250,6 +250,6 @@ This is a **public** repository. We welcome issues and pull requests from anyone
 
 ## Author
 
-**Yao Amevi Amessinou Sossou** ([@soyames](https://github.com/soyames))
+**Yao Amevi A. Sossou** ([@soyames](https://github.com/soyames))
 
 Built from real multi-LLM rate-limit pain: long projects deserve durable progress, not another cold start.
