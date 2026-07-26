@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "checkpoint-001",
+  "timestamp": "2026-07-26T12:00:00Z",
+  "project_name": "example-app",
+  "branch": "main",
+  "commit_hash": null,
+  "milestone": "Authentication",
+  "provider": "claude-code",
+  "session": {
+    "started_at": "2026-07-26T11:40:00Z",
+    "elapsed_minutes": 20,
+    "note": "Self-reported wall-clock time. No provider exposes real quota-remaining to an agent session, so this is a heuristic for proactive checkpointing, not a guarantee. See templates/provider_budgets.md."
+  },
+  "subagents": [],
+  "current_task": {
+    "id": "T-003",
+    "title": "Implement registration endpoint",
+    "status": "in_progress"
+  },
+  "completed_since_last": [
+    "Designed auth architecture",
+    "Created User model and migration"
+  ],
+  "modified_files": [
+    "src/models/user.ts",
+    "src/routes/auth.ts",
+    ".paem/task_list.md"
+  ],
+  "architectural_decisions": [
+    "Use email + password with bcrypt; JWT for sessions"
+  ],
+  "remaining_work": [
+    "Finish registration validation",
+    "Implement login",
+    "Implement password reset",
+    "Write auth tests"
+  ],
+  "known_issues": [
+    "Email uniqueness error messages not yet localized"
+  ],
+  "verification": {
+    "status": "partial",
+    "checks": [
+      "Typecheck not run",
+      "Unit tests not run for new route"
+    ],
+    "notes": "Route scaffolded; handler incomplete"
+  },
+  "recovery": {
+    "status": "safe_to_resume",
+    "manual_intervention_required": false,
+    "notes": "Resume by completing registration validation and handler body"
+  },
+  "next_action": "Complete registration handler validation and return 201 with user id (no password hash).",
+  "session_notes": "Stopped before writing tests. No secrets stored in checkpoint."
+}

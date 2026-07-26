@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/soyames/PAEM-skill/schemas/checkpoint.schema.json",
+  "title": "PAEM checkpoint",
+  "description": "Schema for .paem/latest_checkpoint.json and .paem/checkpoints/checkpoint-NNN.json. See templates/checkpoint.json for a filled example and docs/schema-migration.md for versioning rules.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "checkpoint_id",
+    "timestamp",
+    "current_task",
+    "completed_since_last",
+    "modified_files",
+    "architectural_decisions",
+    "remaining_work",
+    "known_issues",
+    "verification",
+    "recovery",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semantic version of this schema. Bump per docs/schema-migration.md rules, not per project release.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "checkpoint_id": {
+      "type": "string",
+      "description": "Stable identifier, e.g. checkpoint-001. Should match the filename under .paem/checkpoints/ when archived."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 UTC timestamp.",
+      "format": "date-time"
+    },
+    "project_name": {
+      "type": "string"
+    },
+    "branch": {
+      "type": ["string", "null"]
+    },
+    "commit_hash": {
+      "type": ["string", "null"]
+    },
+    "milestone": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Optional. Which AI tool wrote this checkpoint (e.g. claude-code, codex, gemini-cli, cursor, antigravity). Informational only - PAEM's file format does not change per provider."
+    },
+    "session": {
+      "type": "object",
+      "description": "Optional. Self-reported wall-clock session tracking - a heuristic, not a real quota reading. See templates/provider_budgets.md.",
+      "properties": {
+        "started_at": { "type": "string", "format": "date-time" },
+        "elapsed_minutes": { "type": "number", "minimum": 0 },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "subagents": {
+      "type": "array",
+      "description": "Optional. Results reported back by subagents under the single-writer principle - subagents do not write their own checkpoints.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "task": { "type": "string" },
+          "status": { "type": "string" },
+          "summary": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "current_task": {
+      "type": "object",
+      "required": ["id", "title", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["not_started", "in_progress", "blocked", "complete"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "completed_since_last": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "modified_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "architectural_decisions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "remaining_work": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "known_issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["passed", "partial", "failed", "unverified"]
+        },
+        "checks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "recovery": {
+      "type": "object",
+      "required": ["status", "manual_intervention_required"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["safe_to_resume", "needs_repair", "blocked"]
+        },
+        "manual_intervention_required": { "type": "boolean" },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "next_action": {
+      "type": "string",
+      "description": "One concrete, executable next step. Should not be vague ('continue work')."
+    },
+    "session_notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

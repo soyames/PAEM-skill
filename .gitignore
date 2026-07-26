@@ -39,6 +39,12 @@ cache/
 checkpoints/
 !templates/
 
+# ...except the intentionally-committed sample fixture (fixtures/sample-project/.paem/)
+!fixtures/
+!fixtures/**
+!fixtures/sample-project/.paem/
+!fixtures/sample-project/.paem/**
+
 # Secrets
 *.pem
 *.key

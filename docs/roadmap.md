@@ -41,12 +41,12 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 
 ## v1.1 - Protocol hardening
 
-- [ ] Formal JSON Schema for checkpoints (`schemas/checkpoint.schema.json`)
-- [ ] Formal schema for execution reports
-- [ ] Migration guide for schema bumps
-- [ ] Stronger verification checklist (language-agnostic)
-- [ ] Sample `.paem/` fixture for demos and tests
-- [ ] Verify `paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py` stdin field names against live installs (currently best-effort from public docs only) - tracked via the **Hook adapter field verification** issue form
+- [x] Formal JSON Schema for checkpoints (`schemas/checkpoint.schema.json`) - validated in CI against `templates/checkpoint.json` and the fixture checkpoints
+- [x] Formal schema for execution reports (`schemas/execution_report.schema.json` - the data model behind `templates/execution_report.md`; the `.md` stays the human-readable rendering)
+- [x] Migration guide for schema bumps (`docs/schema-migration.md`)
+- [x] Stronger verification checklist (language-agnostic) - `prompts/verify.md` rewritten around an explicit evidence standard and stack-agnostic tooling detection instead of assuming any one ecosystem
+- [x] Sample `.paem/` fixture for demos and tests (`fixtures/sample-project/.paem/`)
+- [ ] Verify `paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py` stdin field names against live installs (currently best-effort from public docs only) - tracked via the **Hook adapter field verification** issue form; adapters now log to stderr when their field guesses don't match, so this is at least observable rather than silent
 - [ ] Revisit a Windsurf/Cascade successor adapter once Devin Local's hook surface (if any) stabilizes
 
 ---

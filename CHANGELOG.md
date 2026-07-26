@@ -19,6 +19,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   somewhere" prose in `examples/codex.md` and `examples/antigravity.md`
   that never referenced those tools' real skills mechanism.
 
+### Added (v1.1 protocol hardening)
+
+- `schemas/checkpoint.schema.json`: formal JSON Schema for
+  `.paem/latest_checkpoint.json` / `checkpoints/*.json`, covering the
+  required core fields plus the optional `provider`, `session`, and
+  `subagents` fields added earlier this cycle
+- `schemas/execution_report.schema.json`: formal schema for the data model
+  behind `templates/execution_report.md` - the markdown stays the rendered
+  output; this schema is for tooling that wants to generate or validate the
+  underlying fields
+- `docs/schema-migration.md`: rules for when a checkpoint/report schema
+  change needs a PATCH/MINOR/MAJOR bump, how to read older checkpoints
+  safely, and a migration log table
+- `fixtures/sample-project/.paem/`: a realistic, internally-consistent
+  filled `.paem/` directory (not the blank `templates/` skeleton) for demos
+  and as a schema-validation test fixture, plus `fixtures/README.md`
+  explaining it
+- `scripts/validate_skill.py`: dependency-free JSON Schema subset
+  validator (`_schema_validate`) and `check_checkpoint_schema()` /
+  `check_schemas_are_valid_json()`, validating `templates/checkpoint.json`
+  and every fixture checkpoint against `schemas/checkpoint.schema.json` in
+  CI
+- `prompts/verify.md` rewritten: explicit evidence standard (a "completed"
+  claim needs concrete evidence, not just the checkpoint's word for it),
+  and tooling checks reworded to detect a project's actual stack via its
+  own manifest files rather than assuming any one language/ecosystem
+
 ### Changed
 
 - SKILL.md frontmatter description no longer says checkpointing happens

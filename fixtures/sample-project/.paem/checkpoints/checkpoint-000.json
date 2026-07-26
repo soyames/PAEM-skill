@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "checkpoint-000",
+  "timestamp": "2026-07-26T11:20:00Z",
+  "project_name": "example-app",
+  "branch": "main",
+  "commit_hash": null,
+  "milestone": "Authentication",
+  "provider": "claude-code",
+  "session": {
+    "started_at": "2026-07-26T11:00:00Z",
+    "elapsed_minutes": 20,
+    "note": "Self-reported wall-clock time. No provider exposes real quota-remaining to an agent session, so this is a heuristic for proactive checkpointing, not a guarantee. See templates/provider_budgets.md."
+  },
+  "subagents": [],
+  "current_task": {
+    "id": "T-001",
+    "title": "Design auth architecture",
+    "status": "complete"
+  },
+  "completed_since_last": [
+    "Initialized project baseline",
+    "Designed auth architecture"
+  ],
+  "modified_files": [
+    ".paem/architecture.md"
+  ],
+  "architectural_decisions": [
+    "Use email + password with bcrypt; JWT for sessions"
+  ],
+  "remaining_work": [
+    "Create User model and migration",
+    "Implement registration",
+    "Implement login",
+    "Implement password reset",
+    "Write auth tests"
+  ],
+  "known_issues": [],
+  "verification": {
+    "status": "passed",
+    "checks": [
+      "Architecture doc reviewed"
+    ],
+    "notes": "No code written yet - design-only checkpoint"
+  },
+  "recovery": {
+    "status": "safe_to_resume",
+    "manual_intervention_required": false,
+    "notes": "Resume by creating the User model"
+  },
+  "next_action": "Create User model and migration.",
+  "session_notes": "Baseline checkpoint before any implementation."
+}

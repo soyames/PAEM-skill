@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/soyames/PAEM-skill/schemas/execution_report.schema.json",
+  "title": "PAEM execution report",
+  "description": "Schema for the data model behind templates/execution_report.md. The .paem/reports/*.md file is a human-readable rendering of this data - this schema exists so tooling can generate or validate a report's underlying fields before rendering, not to replace the markdown output. See docs/schema-migration.md for versioning rules.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "report_id",
+    "timestamp",
+    "checkpoint_id",
+    "project_status",
+    "completed_work",
+    "current_work",
+    "repository_status",
+    "checkpoint_information",
+    "recovery_status",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "report_id": {
+      "type": "string",
+      "description": "e.g. execution_report-001"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "checkpoint_id": {
+      "type": "string",
+      "description": "The checkpoint this report was generated from."
+    },
+    "branch": { "type": ["string", "null"] },
+    "commit_hash": { "type": ["string", "null"] },
+    "project_status": {
+      "type": "object",
+      "properties": {
+        "overall_completion_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "current_milestone": { "type": "string" },
+        "current_task": { "type": "string" },
+        "remaining_tasks_count": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "completed_work": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "current_work": {
+      "type": "object",
+      "properties": {
+        "objective": { "type": "string" },
+        "files_being_modified": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "progress": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "outstanding_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "issue"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "issue": { "type": "string" },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "repository_status": {
+      "type": "object",
+      "properties": {
+        "branch": { "type": ["string", "null"] },
+        "dirty_files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "staged_files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recent_commits": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "checkpoint_information": {
+      "type": "object",
+      "required": ["latest_checkpoint_id", "verification_status", "recovery_readiness"],
+      "properties": {
+        "latest_checkpoint_id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "verification_status": {
+          "type": "string",
+          "enum": ["passed", "partial", "failed", "unverified"]
+        },
+        "recovery_readiness": {
+          "type": "string",
+          "enum": ["safe_to_resume", "manual_intervention_required"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "risk_assessment": {
+      "type": "object",
+      "properties": {
+        "regressions": { "type": "string" },
+        "architecture": { "type": "string" },
+        "technical_debt": { "type": "string" },
+        "dependencies": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "recovery_status": {
+      "type": "object",
+      "required": ["safe_to_resume", "manual_intervention_required"],
+      "properties": {
+        "safe_to_resume": { "type": "boolean" },
+        "manual_intervention_required": { "type": "boolean" },
+        "details": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "next_action": {
+      "type": "string",
+      "description": "One concrete, executable next step."
+    }
+  },
+  "additionalProperties": true
+}

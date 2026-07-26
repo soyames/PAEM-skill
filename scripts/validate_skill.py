@@ -80,6 +80,21 @@ def check_layout() -> None:
         "templates/completed_tasks.md",
         "templates/agents_md_snippet.md",
         "templates/provider_budgets.md",
+        "schemas/checkpoint.schema.json",
+        "schemas/execution_report.schema.json",
+        "docs/schema-migration.md",
+        "fixtures/README.md",
+        "fixtures/sample-project/.paem/project_summary.md",
+        "fixtures/sample-project/.paem/architecture.md",
+        "fixtures/sample-project/.paem/task_list.md",
+        "fixtures/sample-project/.paem/completed_tasks.md",
+        "fixtures/sample-project/.paem/known_issues.md",
+        "fixtures/sample-project/.paem/conventions.md",
+        "fixtures/sample-project/.paem/latest_checkpoint.json",
+        "fixtures/sample-project/.paem/checkpoints/checkpoint-000.json",
+        "fixtures/sample-project/.paem/checkpoints/checkpoint-001.json",
+        "fixtures/sample-project/.paem/resume_prompt.md",
+        "fixtures/sample-project/.paem/reports/execution_report-001.md",
         "scripts/paem_guard_core.py",
         "scripts/paem_checkpoint_guard.py",
         "scripts/paem_checkpoint_guard_codex.py",
@@ -101,7 +116,7 @@ def check_layout() -> None:
     if (ROOT / "CODE_OF_CONDUCT.md").exists():
         error("CODE_OF_CONDUCT.md should not exist (removed by project choice)")
 
-    for name in ("docs", "examples", "prompts", "templates", "scripts", ".github"):
+    for name in ("docs", "examples", "prompts", "templates", "scripts", ".github", "schemas", "fixtures"):
         require_dir(name)
 
 
@@ -202,6 +217,120 @@ def check_checkpoint_template() -> None:
             error(f"checkpoint template missing field: {key}")
     if data.get("schema_version") != "1.0.0":
         warn(f"checkpoint schema_version is {data.get('schema_version')!r}, expected '1.0.0'")
+
+
+def _schema_validate(instance: object, schema: dict, path: str = "$") -> list[str]:
+    """Minimal, dependency-free JSON Schema (2020-12 subset) validator.
+
+    Supports exactly the keywords used under schemas/: type, required,
+    properties, additionalProperties (bool only), items, enum, pattern,
+    minimum, maximum. Deliberately not a general-purpose implementation -
+    this project stays dependency-free rather than pulling in the
+    `jsonschema` package for two small internal schemas. If the schemas
+    grow to need more of the spec, reconsider that tradeoff.
+    """
+    errors: list[str] = []
+
+    type_map = {
+        "string": str,
+        "integer": int,
+        "number": (int, float),
+        "boolean": bool,
+        "object": dict,
+        "array": list,
+        "null": type(None),
+    }
+
+    def check_type(value: object, expected: str) -> bool:
+        py_type = type_map.get(expected)
+        if py_type is None:
+            return True
+        if expected == "integer" and isinstance(value, bool):
+            return False
+        if expected == "number" and isinstance(value, bool):
+            return False
+        return isinstance(value, py_type)
+
+    expected_types = schema.get("type")
+    if expected_types is not None:
+        candidates = [expected_types] if isinstance(expected_types, str) else expected_types
+        if not any(check_type(instance, t) for t in candidates):
+            errors.append(f"{path}: expected type {candidates}, got {type(instance).__name__}")
+            return errors  # further checks would be meaningless
+
+    if "enum" in schema and instance not in schema["enum"]:
+        errors.append(f"{path}: value {instance!r} not in enum {schema['enum']}")
+
+    if "pattern" in schema and isinstance(instance, str):
+        if not re.match(schema["pattern"], instance):
+            errors.append(f"{path}: {instance!r} does not match pattern {schema['pattern']!r}")
+
+    if "minimum" in schema and isinstance(instance, (int, float)) and not isinstance(instance, bool):
+        if instance < schema["minimum"]:
+            errors.append(f"{path}: {instance} below minimum {schema['minimum']}")
+
+    if "maximum" in schema and isinstance(instance, (int, float)) and not isinstance(instance, bool):
+        if instance > schema["maximum"]:
+            errors.append(f"{path}: {instance} above maximum {schema['maximum']}")
+
+    if isinstance(instance, dict):
+        for req in schema.get("required", []):
+            if req not in instance:
+                errors.append(f"{path}: missing required field '{req}'")
+        properties = schema.get("properties", {})
+        for key, value in instance.items():
+            if key in properties:
+                errors.extend(_schema_validate(value, properties[key], f"{path}.{key}"))
+            elif schema.get("additionalProperties") is False:
+                errors.append(f"{path}: unexpected additional property '{key}'")
+
+    if isinstance(instance, list) and "items" in schema:
+        for i, item in enumerate(instance):
+            errors.extend(_schema_validate(item, schema["items"], f"{path}[{i}]"))
+
+    return errors
+
+
+def check_schemas_are_valid_json() -> None:
+    """Both schema files must at least parse as JSON."""
+    for rel in ("schemas/checkpoint.schema.json", "schemas/execution_report.schema.json"):
+        path = ROOT / rel
+        if not path.is_file():
+            continue  # already reported by check_layout()
+        try:
+            json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            error(f"{rel} is not valid JSON: {exc}")
+
+
+def check_checkpoint_schema() -> None:
+    """Validate checkpoint JSON files against schemas/checkpoint.schema.json."""
+    schema_path = ROOT / "schemas" / "checkpoint.schema.json"
+    if not schema_path.is_file():
+        return  # already reported by check_layout()
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        error(f"schemas/checkpoint.schema.json is not valid JSON: {exc}")
+        return
+
+    candidates = [
+        "templates/checkpoint.json",
+        "fixtures/sample-project/.paem/latest_checkpoint.json",
+        "fixtures/sample-project/.paem/checkpoints/checkpoint-000.json",
+        "fixtures/sample-project/.paem/checkpoints/checkpoint-001.json",
+    ]
+    for rel in candidates:
+        path = ROOT / rel
+        if not path.is_file():
+            continue  # already reported by check_layout()
+        try:
+            instance = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            error(f"{rel} is not valid JSON: {exc}")
+            continue
+        for msg in _schema_validate(instance, schema):
+            error(f"{rel} fails schema: {msg}")
 
 
 def check_readme_links() -> None:
@@ -352,6 +481,8 @@ def main() -> int:
     check_skill_md()
     check_skill_yaml()
     check_checkpoint_template()
+    check_schemas_are_valid_json()
+    check_checkpoint_schema()
     check_checkpoint_guard_compiles()
     check_readme_links()
     check_gitignore()
