@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in the skill, protocol, templates, or docs is wrong or unsafe.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. **Do not paste API keys, tokens, passwords, or private source.**
+        Security-sensitive issues: use [SECURITY.md](https://github.com/soyames/PAEM-skill/blob/master/SECURITY.md) instead of this form.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - SKILL.md / paem.md protocol
+        - templates/
+        - prompts/
+        - docs/
+        - examples/
+        - scripts/validate_skill.py
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: AI tool / environment
+      description: e.g. Claude Code, Cursor, Codex, Gemini, local model
+      placeholder: Cursor Agent
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Expected vs actual behavior.
+      placeholder: On resume, PAEM re-implemented a completed task...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Load SKILL.md
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: paem-excerpt
+    attributes:
+      label: Sanitized .paem/ excerpt (optional)
+      description: Redact secrets and private business logic. JSON/markdown snippets only.
+  - type: checkboxes
+    id: confirms
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have searched existing issues for duplicates
+          required: true
+        - label: This report contains no secrets or credentials
+          required: true

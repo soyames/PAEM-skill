@@ -1,0 +1,43 @@
+name: Question
+description: Ask how to install, use, or resume with PAEM.
+title: "[question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [FAQ](https://github.com/soyames/PAEM-skill/blob/master/docs/faq.md) and [examples/](https://github.com/soyames/PAEM-skill/tree/master/examples) first.
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      options:
+        - Installation / loading the skill
+        - Checkpointing
+        - Resume / recovery
+        - Provider-specific usage
+        - .paem/ layout
+        - Contributing
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: AI tool (if relevant)
+      placeholder: Claude Code, Cursor, ...
+  - type: checkboxes
+    id: confirms
+    attributes:
+      label: Confirmations
+      options:
+        - label: This is not a security report (those go through SECURITY.md)
+          required: true
+        - label: No secrets are included in this question
+          required: true

@@ -1,0 +1,46 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs and temp
+*.log
+temp/
+tmp/
+cache/
+*.tmp
+
+# Local PAEM runtime state (project-specific; do not publish sample noise)
+# Keep templates; ignore live runtime dirs if someone runs PAEM inside this repo
+.paem/
+checkpoints/
+!templates/
+
+# Secrets
+*.pem
+*.key
+credentials.json
+secrets/

@@ -1,0 +1,59 @@
+name: Persistent AI Execution Manager
+id: paem-skill
+version: 1.0.0
+author: Yao Amevi Amessinou Sossou
+license: MIT
+homepage: https://github.com/soyames/PAEM-skill
+description: >
+  An AI orchestration skill that enables long-running software engineering
+  projects to survive interruptions by continuously checkpointing progress,
+  preserving project memory, and preparing deterministic recovery instructions.
+  Survives hourly rate limits, daily quotas, context exhaustion, browser crashes,
+  network failures, and machine restarts without requiring manual intervention.
+
+category:
+  - software-engineering
+  - workflow
+  - orchestration
+  - automation
+  - recovery
+
+keywords:
+  - checkpoint
+  - resume
+  - recovery
+  - engineering
+  - codex
+  - claude
+  - gemini
+  - cursor
+  - ai
+  - context
+  - orchestration
+  - rate-limit
+  - persistent
+  - multi-session
+
+entry: paem.md
+skill_entry: SKILL.md
+
+supports:
+  - Claude
+  - Codex
+  - ChatGPT
+  - Gemini
+  - Cursor
+  - Antigravity
+  - OpenHands
+  - Grok
+  - Local LLMs
+
+runtime:
+  state_dir: .paem
+  requires:
+    - filesystem read/write
+    - ability to follow multi-step instructions
+  optional:
+    - git
+
+language: en
