@@ -2,7 +2,7 @@
 """PAEM checkpoint guard - Claude Code `Stop` hook adapter.
 
 Wire this into a project's `.claude/settings.json` as a `Stop` hook (see
-examples/claude.md) so "write a checkpoint before stopping" is enforced
+examples/claude.md) so "save execution state before exiting" is enforced
 deterministically instead of relying on the model remembering to do it every
 time. All detection logic lives in scripts/paem_guard_core.py, shared with
 the other providers' adapters - this file only knows Claude Code's specific

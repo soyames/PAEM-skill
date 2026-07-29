@@ -29,7 +29,7 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [x] MIT-licensed GitHub project layout
 - [x] Security policy + issue/PR templates for public contributions
 - [x] Package smoke tests (`scripts/validate_skill.py`) + CI
-- [x] AGENTS.md integration (`templates/agents_md_snippet.md`, read/append during Phase 1)
+- [x] `A-G-E-N-T-S.md` integration (`templates/project_agent_snippet.md`, read/append during Phase 1)
 - [x] Deterministic Stop-hook enforcement for Claude Code (`scripts/paem_checkpoint_guard.py`)
 - [x] Shared detection core (`scripts/paem_guard_core.py`) + adapters for Codex CLI and Gemini CLI (documented contract, best-effort field names)
 - [x] Best-effort Cursor adapter using `followup_message` (Cursor's `stop` hook isn't a reliable hard block)

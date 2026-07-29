@@ -83,7 +83,7 @@ def check_layout() -> None:
         "templates/resume_prompt.md",
         "templates/task_list.md",
         "templates/completed_tasks.md",
-        "templates/agents_md_snippet.md",
+        "templates/project_agent_snippet.md",
         "templates/provider_budgets.md",
         "schemas/checkpoint.schema.json",
         "schemas/execution_report.schema.json",

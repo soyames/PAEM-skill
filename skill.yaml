@@ -33,7 +33,7 @@ keywords:
   - rate-limit
   - persistent
   - multi-session
-  - agents.md
+  - agent
 
 entry: paem.md
 skill_entry: SKILL.md
@@ -58,7 +58,7 @@ runtime:
     - ability to follow multi-step instructions
   optional:
     - git
-    - AGENTS.md (repo-wide agent conventions, cross-tool standard)
+    - A-G-E-N-T-S.md (repo-wide agent conventions, cross-tool standard)
     - deterministic hooks (Claude Code, Codex CLI, Gemini CLI verified/documented; Cursor best-effort; for enforced checkpointing)
     - .paem/provider_budgets.md (user-defined soft time thresholds; no provider exposes real quota)
 

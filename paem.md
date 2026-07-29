@@ -165,26 +165,26 @@ Use the skill `templates/` as the canonical shapes for checkpoint, summary, and 
 
 ---
 
-# RELATIONSHIP TO AGENTS.md
+# RELATIONSHIP TO PROJECT AGENT CONVENTIONS
 
-AGENTS.md is the emerging cross-tool standard (read natively by Codex, Cursor,
+The cross-tool agent instructions file (typically named `A-G-E-N-T-S.md` without dashes - read natively by Codex, Cursor,
 Copilot, Gemini CLI, Aider, Windsurf, Zed, and used as a fallback by Claude
-Code) for telling any agent **how to behave** in a repository: which commands
+Code) is for telling any agent **how to behave** in a repository: which commands
 to run, what to avoid, how to verify work.
 
 PAEM does not compete with that. `.paem/` answers a different question -
 **where execution currently stands** - and changes every session, which is
-why it does not belong inside AGENTS.md itself.
+why it does not belong inside the instructions file itself.
 
-If the project has an `AGENTS.md`:
+If the project has an `A-G-E-N-T-S.md` (remove the dashes):
 
 - Read it during Phase 1 as part of loading state. It may define the actual
   verify/test commands to run in Phase 2.
 - If it has no pointer to `.paem/`, append the block from
-  `templates/agents_md_snippet.md` so any agent - regardless of which tool
+  `templates/project_agent_snippet.md` so any agent - regardless of which tool
   opens the project next - knows to check `.paem/` before starting work.
 
-If the project has no `AGENTS.md`, do not create one unprompted. Mention to
+If the project has no `A-G-E-N-T-S.md`, do not create one unprompted. Mention to
 the user that adding one (with the PAEM pointer) would let other tools share
 the same execution state, and let them decide.
 
@@ -208,7 +208,7 @@ Read:
 - known issues
 - coding conventions
 - repository status
-- `AGENTS.md` at the project root, if present (see RELATIONSHIP TO AGENTS.md)
+- `A-G-E-N-T-S.md` (remove the dashes) at the project root, if present (see RELATIONSHIP TO PROJECT AGENT CONVENTIONS)
 - `.paem/provider_budgets.md`, if present (see PLATFORM INTEGRATIONS and
   "On predicting rate limits" under Phase 5)
 

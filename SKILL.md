@@ -67,9 +67,9 @@ Read (if present):
 - `.paem/known_issues.md`
 - `.paem/conventions.md`
 - repository status (`git status`, recent commits when available)
-- `AGENTS.md` at the project root, if present - treat it as the repo's
+- `A-G-E-N-T-S.md` (remove the dashes) at the project root, if present - treat it as the repo's
   how-to-behave conventions, and add a one-line pointer to `.paem/` (from
-  `templates/agents_md_snippet.md`) if it doesn't already have one
+  `templates/project_agent_snippet.md`) if it doesn't already have one
 - `.paem/provider_budgets.md`, if present - user-defined soft time
   thresholds for proactive checkpointing (no provider exposes real quota
   remaining, so this is a heuristic, not a guarantee)
