@@ -1,15 +1,17 @@
 name: Persistent AI Execution Manager
 id: paem-skill
-version: 1.0.0
+version: 1.3.0
 author: Yao Amevi Amessinou Sossou
 license: MIT
 homepage: https://github.com/soyames/PAEM-skill
 description: >
-  An AI orchestration skill that enables long-running software engineering
-  projects to survive interruptions by continuously checkpointing progress,
-  preserving project memory, and preparing deterministic recovery instructions.
-  Survives hourly rate limits, daily quotas, context exhaustion, browser crashes,
-  network failures, and machine restarts without requiring manual intervention.
+  An AI orchestration skill for long-running software engineering projects that
+  must survive interruptions. It publishes validated, repository-bound
+  checkpoints, preserves project memory, and prepares recovery instructions with
+  explicit verification and staleness status. Applies to hourly rate limits,
+  daily quotas, context exhaustion, browser crashes, network failures, and
+  machine restarts - bounded by the last checkpoint that was actually written,
+  since nothing can recover work that was never saved.
 
 category:
   - software-engineering
@@ -57,9 +59,10 @@ runtime:
     - filesystem read/write
     - ability to follow multi-step instructions
   optional:
+    - Python 3.11+ (enables the validated checkpoint writer, initializer and staleness check)
     - git
     - A-G-E-N-T-S.md (repo-wide agent conventions, cross-tool standard)
-    - deterministic hooks (Claude Code, Codex CLI, Gemini CLI verified/documented; Cursor best-effort; for enforced checkpointing)
+    - optional Stop-hook guard (Claude Code verified; Codex CLI and Gemini CLI documented; Cursor best-effort) - a best-effort, fail-open check, not a guarantee
     - .paem/provider_budgets.md (user-defined soft time thresholds; no provider exposes real quota)
 
 language: en

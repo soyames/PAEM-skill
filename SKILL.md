@@ -5,9 +5,9 @@ description: >
   projects that must survive rate limits, daily quotas, context exhaustion, crashes,
   network failures, and restarts. Follows a checkpoint protocol to persist progress,
   compresses project memory, verifies state before continuing, and prepares resume
-  prompts. (Checkpointing is agent-followed by default; it becomes enforced only if
-  you wire up the optional Stop-hook guard - see "Optional: deterministic enforcement
-  via hooks" below.)
+  prompts. (Checkpointing is agent-followed by default; the optional Stop-hook guard
+  only blocks a turn that looks stale - it is a best-effort, fail-open check, not a
+  guarantee - see "Optional: Stop-hook enforcement" below.)
   Triggers: /paem, "use PAEM", "checkpoint this", "resume from checkpoint",
   "continue long project", "recover from rate limit", "persistent execution",
   multi-session engineering, survive quota, don't lose progress.
@@ -46,10 +46,15 @@ Create and maintain project state under:
 ├── known_issues.md
 ├── conventions.md
 ├── latest_checkpoint.json
+├── current.json
 ├── checkpoints/
 ├── reports/
 └── resume_prompt.md
 ```
+
+`latest_checkpoint.json`, `resume_prompt.md` and `current.json` are derived
+views of one published generation. When `scripts/paem_checkpoint.py` is
+available, publish through it rather than hand-editing them separately.
 
 Use templates from this skill's `templates/` when creating files. Prefer updating existing files over inventing parallel formats.
 
@@ -73,6 +78,11 @@ Read (if present):
 - `.paem/provider_budgets.md`, if present - user-defined soft time
   thresholds for proactive checkpointing (no provider exposes real quota
   remaining, so this is a heuristic, not a guarantee)
+
+If `scripts/paem_checkpoint.py` is installed, check the saved state before
+trusting it (`python scripts/paem_checkpoint.py check --target .`). Its status
+tells you whether the pointer, the resume text and the repository still agree;
+see Phase 7 for what each status means.
 
 Determine exactly where execution stopped. **Never assume. Always verify.**
 
@@ -104,12 +114,31 @@ Before writing code:
 After every meaningful milestone (task complete, decision made, tests green, or risky change):
 
 1. Update `.paem/` summaries and task lists
-2. Write a new checkpoint JSON under `.paem/checkpoints/`
-3. Point `.paem/latest_checkpoint.json` at that checkpoint (or copy fields)
-4. Refresh `.paem/resume_prompt.md`
-5. Optionally write a short execution report under `.paem/reports/`
+2. Publish the new checkpoint record (see below)
+3. Optionally write a short execution report under `.paem/reports/`
 
 Checkpoint contents must include: timestamp, completed work, modified files, decisions, remaining work, known issues, verification status, and commit hash if available.
+
+**Publish, don't hand-edit, when Python is available.** The archive,
+`latest_checkpoint.json`, `resume_prompt.md` and `current.json` are four views
+of one generation; hand-writing them is what lets an interrupted save leave
+them disagreeing. Write the record body to a file, then:
+
+```bash
+python scripts/paem_checkpoint.py save --target . --input record.json --expected-id checkpoint-014
+```
+
+`--expected-id` is the checkpoint you last read. If another session published
+since then, the save fails instead of overwriting it - reload and retry with the
+new id. The writer validates the record against the schema, fingerprints the Git
+state it is bound to, writes the archive first and the publication manifest
+last, and stamps `verification_basis: "self_reported"`: it checks that a record
+is well formed and bound to the current repository, not that the work it
+describes was done.
+
+Without Python, write the archive and the pointer yourself, keep them
+byte-identical, and say the checkpoint was hand-written. Expect `check` to
+report `legacy` until a managed save adopts that state with `--adopt-legacy`.
 
 ### Phase 5 - Detect interruptions
 
@@ -119,6 +148,10 @@ Watch for and prepare early when you see:
 - Timeouts, empty or corrupted responses
 - Failed verification, incomplete edits
 - User signals they must stop or switch tools
+
+These signals are heuristics. No provider exposes remaining quota, and a hard
+crash or an exhausted quota gives no chance to run Phase 6 at all. Checkpoint on
+milestones rather than waiting for a warning.
 
 ### Phase 6 - Prepare recovery
 
@@ -133,11 +166,22 @@ Before a likely stop (or immediately when limits hit):
 
 On resume:
 
-1. Load latest checkpoint
-2. Verify repo and completed work
-3. Reconstruct project memory from `.paem/`
-4. Continue the unfinished task
-5. Do not regenerate completed work unless verification shows corruption
+1. Check the saved state before trusting it:
+   `python scripts/paem_checkpoint.py check --target .`
+   - `current` - archive, pointer and resume text agree, and the repository
+     still matches. Load it.
+   - `stale` - the record is valid but HEAD, the index or working files moved
+     on. Verification attached to it is no longer evidence; re-verify first.
+   - `inconsistent` - the pointer or resume text describes a different
+     generation than the manifest, or an interrupted save left a newer archive
+     behind. Report exactly what disagrees before choosing anything.
+   - `invalid` / `legacy` / `missing` - do not silently fall back to an older
+     checkpoint and call it current. Say what is wrong and what you propose.
+2. Load the selected checkpoint
+3. Verify repo and completed work
+4. Reconstruct project memory from `.paem/`
+5. Continue the unfinished task
+6. Do not regenerate completed work unless verification shows corruption
 
 ## Task decomposition
 
@@ -172,17 +216,24 @@ Provide a concise report covering:
 
 Every session must end with a **single, executable next action** a future session can start without re-planning.
 
-## Optional: deterministic enforcement via hooks
+## Optional: Stop-hook enforcement
 
 The phases above rely on the model remembering to checkpoint. On hosts with
 a hook system, wire the matching adapter as a stop-of-turn hook so a
-session can't (or is at least strongly nudged not to) end with stale,
-unverified `.paem/` state: `scripts/paem_checkpoint_guard.py` (Claude Code,
-verified), `_codex.py` / `_gemini.py` (documented contract, best-effort
-field names), `_cursor.py` (best-effort nudge only - Cursor's `stop` hook
-isn't a reliable hard block). See the PLATFORM INTEGRATIONS table in
-`paem.md` and the matching `examples/<provider>.md`. This is additive; skip
-it entirely and the prompted protocol still works the same.
+session is at least nudged not to end with stale, unverified `.paem/` state:
+`scripts/paem_checkpoint_guard.py` (Claude Code, verified), `_codex.py` /
+`_gemini.py` (documented contract, best-effort field names), `_cursor.py`
+(best-effort nudge only - Cursor's `stop` hook isn't a reliable hard block).
+See the PLATFORM INTEGRATIONS table in `paem.md` and the matching
+`examples/<provider>.md`. This is additive; skip it entirely and the prompted
+protocol still works the same.
+
+The guard is a best-effort check, not a guarantee. It fails open: unexpected
+errors and malformed host payloads never block a turn, and `stop_hook_active`
+lets a session escape a loop. A hook also cannot run after a hard crash or an
+exhausted quota, so it complements milestone checkpoints rather than replacing
+them. "Allowed" means no staleness was detected - it does not mean the
+checkpoint was verified, and it never means the work was.
 
 ## Full protocol
 

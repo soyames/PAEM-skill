@@ -12,7 +12,9 @@ PAEM is an open-source AI orchestration **skill** (protocol + templates + prompt
 - Machine restarts
 - AI provider outages
 
-Instead of restarting work from scratch, PAEM instructs a capable AI to continuously **checkpoint progress to disk**, compress project memory into structured files, and prepare **deterministic resume instructions** so a new session can continue from the latest verified state.
+Instead of restarting work from scratch, PAEM instructs a capable AI to continuously **checkpoint progress to disk**, compress project memory into structured files, and prepare **resume instructions that name the exact saved generation** so a new session can continue from the latest verified state.
+
+When the bundled Python runtime is installed, checkpoints are published as one validated, repository-bound generation instead of four files the agent has to keep in sync by hand, and a session can tell whether a saved checkpoint is still current before trusting it.
 
 > **Honest scope:** PAEM is not a background daemon or hosted service. It works when an AI agent loads this skill and follows the protocol. Continuity lives in `.paem/` files inside *your* project, not in chat history.
 
@@ -41,6 +43,8 @@ Automation platforms exist, but not everyone can set them up or operate them. PA
 | Feature | What it actually means |
 |---------|------------------------|
 | **Checkpoint protocol** | After milestones, write structured state under `.paem/checkpoints/` |
+| **Consistent publication** | `paem_checkpoint.py` writes the archive, pointer, resume text, and manifest as one validated generation, and refuses to clobber a competing session |
+| **Staleness detection** | `paem_checkpoint.py check` reports `current` / `stale` / `inconsistent` / `invalid` / `legacy` before a session trusts a record |
 | **Persistent project memory** | Summaries, tasks, architecture, and issues live on disk |
 | **Context compression** | Prompt modules guide rewriting long chat into short durable files |
 | **Resume prompts** | `.paem/resume_prompt.md` is paste-ready for a new session |
@@ -215,12 +219,13 @@ When PAEM runs against a software project, it should create:
 ├── completed_tasks.md
 ├── known_issues.md
 ├── conventions.md
-├── latest_checkpoint.json
+├── latest_checkpoint.json     # mirror of the published checkpoint
+├── current.json               # publication manifest (id + archive SHA-256)
 ├── checkpoints/
 │   └── checkpoint-001.json
 ├── reports/                   # optional
 │   └── execution_report-001.md
-└── resume_prompt.md
+└── resume_prompt.md           # derived from the same published record
 ```
 
 These files are the source of truth for **execution memory**. Your git history remains the source of truth for **code**.

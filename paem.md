@@ -536,11 +536,16 @@ and never depends on any of what follows.
 By 2026 most major coding agent hosts converged on a similar hook
 architecture (fire a script at defined lifecycle points, read JSON on
 stdin, signal block/allow via exit code or JSON on stdout). Where that
-exists, PAEM can layer real enforcement on top so checkpointing is not only
-self-reported. All adapters share one detection core
-(`scripts/paem_guard_core.py`) so the actual logic - is `.paem/` stale,
-does the transcript mention a rate limit, has the time budget been
-exceeded - only has to be right once.
+exists, PAEM can layer a narrower, best-effort check on top so a session is
+nudged not to end with state that looks stale. It is not a guarantee that
+checkpointing happened: the guard fails open, cannot run after a hard crash or
+an exhausted quota, and "allowed" means only that no staleness was detected.
+All adapters share one detection core (`scripts/paem_guard_core.py`) so the
+actual logic - does the published generation validate and still match the
+working tree, does the transcript mention a rate limit, has the time budget
+been exceeded - only has to be right once. The guard validates the record and
+its repository binding; it never treats a recent modification time as proof
+that a record is complete or verified.
 
 | Host | Hook event | Block mechanism | Status |
 |------|-----------|------------------|--------|
@@ -560,6 +565,14 @@ adapter tries several plausible field names and falls back to `os.getcwd()`
 rather than failing silently on a wrong guess. If your version of a tool
 uses different fields, please open an issue.
 
+All adapters fail open. Unexpected errors, malformed host payloads (an empty
+body, a JSON array, `null`) and a missing `.paem/` never block a turn - a
+broken guard must not be able to wall off your editor. `stop_hook_active`
+lets a session escape a block loop, and `PAEM_SKIP_GUARD=1` opts out
+deliberately. When the guard does block, the exit status and message say
+whether the state was stale, invalid or inconsistent; a block is a claim about
+saved state, never a claim that the work was verified.
+
 This whole section is additive: skip it entirely on any host, including
 Claude Code, and the prompted protocol above still works the same.
 
@@ -569,8 +582,8 @@ Claude Code, and the prompted protocol above still works the same.
 
 PAEM is successful when:
 
-- No completed work is lost.
-- Every interruption can be recovered.
+- No completed work is lost after it has been checkpointed.
+- Every interruption that followed a checkpoint can be resumed from it.
 - Every session resumes accurately.
 - Duplicate work is avoided.
 - Project memory remains consistent.

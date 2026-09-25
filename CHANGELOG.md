@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (v1.3 managed checkpoints)
+
+- `scripts/paem_checkpoint.py`: publishes and inspects consistent checkpoint
+  generations. `save` validates the record against the schema, fingerprints the
+  Git state it binds to, writes the archive first and the publication manifest
+  (`.paem/current.json`) last, and refuses to publish if another session saved
+  first (`--expected-id`) or the repository moved mid-save. `check` is read-only
+  and reports `current` / `stale` / `inconsistent` / `invalid` / `legacy` /
+  `missing` / `unavailable`; `resume` prints the resume text.
+- `scripts/paem_fs.py`, `scripts/paem_repository.py`: shared containment
+  (symlink/junction-safe path resolution, atomic writes, writer lock) and Git
+  observation used by the writer, the initializer and the guard.
+- `scripts/paem_init.py` now publishes the `checkpoint-000` baseline through the
+  same writer, so a fresh `.paem/` is manifest-backed from the first save.
+- `tests/`: dependency-free `unittest` regressions that drive the actual
+  installer, initializer, writer and hook adapters in disposable projects -
+  installed-payload execution, foreign-install preservation, interrupted
+  publication, competing writers, legacy adoption, worktree mismatch, deletions,
+  renames, filenames with spaces, malformed JSON with a fresh mtime, and
+  non-object host payloads. Wired into `.github/workflows/validate.yml` on
+  Ubuntu and Windows, Python 3.11 and 3.12.
+
+### Fixed (v1.3 hardening)
+
+- **Package completeness.** `scripts/install.py` previously omitted
+  `paem_init.py`, `validate_checkpoint.py`, `paem_schema_lib.py`, both schemas
+  and `LICENSE` from what it copied, so an installed package advertised
+  utilities it did not ship. The manifest now covers them, and the installer
+  records a SHA-256 per file.
+- **Installer ownership.** Installation now preflights the whole payload before
+  the first write, refuses a destination that is a symlink/junction out of the
+  target, and refuses to overwrite a file it did not write - a user's own
+  `paem/` skill folder is left untouched instead of being silently replaced.
+  Re-installing preserves extra files the user added.
+- **Git state parsing.** Dirty-state detection previously split line-oriented
+  porcelain output and stat'ed the git-quoted spelling, so `app file.txt` was
+  missed, deleted files were skipped (they have no mtime), and renames and
+  index-only changes could be lost. It now uses `-z` NUL-delimited parsing,
+  records deletions, renames, symlink targets and staged-only changes, and
+  fingerprints file bytes rather than trusting mtime.
+- **Malformed checkpoints.** A truncated or schema-invalid
+  `latest_checkpoint.json` with a recent modification time was accepted as
+  fresh. The guard now parses and validates the record, distinguishes unknown
+  state from valid state, and blocks rather than assuming.
+- **Hook adapters fail open.** The Claude adapter called `.get` on the parsed
+  payload outside its exception guard, so a JSON array or `null` exited 1 with a
+  traceback instead of allowing the turn. All four adapters now validate the
+  payload shape first and never traceback; the Codex, Gemini and Cursor
+  adapters were audited for the same defect.
+- **Clean-tree revision drift.** A checkpoint whose `commit_hash` no longer
+  matched HEAD was treated as current whenever the working tree was clean. The
+  writer binds each record to a repository snapshot (worktree, HEAD, branch,
+  index and dirty-file digests) and `check` reports `stale` when any of it
+  moves.
+- **Derived-file drift.** The archive, `latest_checkpoint.json` and
+  `resume_prompt.md` could describe different generations after an interrupted
+  or concurrent save, and a newer incomplete archive could look newer than the
+  one the pointer named. Publication is now ordered archive-then-manifest, and
+  `check` reports `inconsistent` with the specific disagreement.
+
+### Changed (v1.3 documentation alignment)
+
+- `SKILL.md`, `prompts/checkpoint.md` and `prompts/resume.md` now publish
+  through `paem_checkpoint.py` instead of instructing the agent to hand-edit
+  four files that must agree, and resume checks status before loading anything
+  rather than trusting the newest filename.
+- `docs/checkpointing.md` and `docs/recovery.md` document the publication
+  manifest, the `1.1.0` record version, legacy adoption, and every `check`
+  status with what to do about it.
+- Claim alignment: the package no longer describes the Stop hook as a
+  "deterministic" guarantee or recovery as working "without manual
+  intervention". The guard is documented as a best-effort, fail-open check that
+  cannot run after a hard crash or an exhausted quota; a managed record is
+  `verification_basis: "self_reported"`, meaning the state binding is checked
+  and the work is not.
+
 ### Found (real-install testing)
 
 - **Antigravity skill auto-discovery did not work in a controlled real-install

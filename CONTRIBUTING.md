@@ -13,15 +13,43 @@ This repository is **public**. Anyone may open issues and pull requests. Maintai
 1. Search [existing issues](https://github.com/soyames/PAEM-skill/issues) to avoid duplicates.
 2. For security-sensitive topics, use [SECURITY.md](SECURITY.md) - **not** a public issue.
 3. For behavior or docs changes, open an issue first when the change is non-trivial.
-4. Run the package check locally:
+4. Run the checks locally:
 
 ```bash
+# Layout, frontmatter, schema and template checks (fast)
 python scripts/validate_skill.py
+
+# Behavior regressions: the real installer, initializer, checkpoint writer
+# and hook adapters, in disposable temporary projects
+python -m unittest discover -s tests -v
 ```
+
+CI runs both on Ubuntu and Windows, Python 3.11 and 3.12. The behavior
+suite needs only the standard library; it creates its own Git fixtures and
+cleans them up, and it never touches your own `.paem/` state.
 
 ---
 
 ## Ways to contribute
+
+### Improve the runtime
+
+`scripts/` holds the optional runtime: the installer, the `.paem/`
+initializer, the checkpoint writer/validator and the Stop-hook guard adapters.
+Anything you change there needs a regression that drives the real entry point in
+a disposable project rather than a unit test of an extracted helper - the
+defects this suite was built to catch (quoted Git status paths, deletions with
+no mtime, truncated records with a fresh mtime, adapters that traceback on
+malformed host input) all lived at the edges between the script and its
+environment.
+
+Rules for new runtime code:
+
+- No third-party dependencies. Standard library only, Python 3.11+.
+- Every write stays inside the resolved target directory - no following symlinks
+  or junctions out of it (`paem_fs.safe_path`).
+- Never overwrite a file the package did not write; record hashes and refuse.
+- Fail open in hooks, but never report an unchecked state as verified.
 
 ### Improve prompts
 
