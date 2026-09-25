@@ -70,9 +70,21 @@ def main() -> int:
     try:
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
+        sys.stderr.write("PAEM guard: malformed hook JSON; checkpoint health unknown.\n")
         payload = {}
+    if not isinstance(payload, dict):
+        sys.stderr.write("PAEM guard: expected a JSON object; checkpoint health unknown.\n")
+        print("{}")
+        return 0
 
     workspace_roots = payload.get("workspace_roots") or []
+    if not isinstance(workspace_roots, list) or any(not isinstance(item, str) for item in workspace_roots):
+        sys.stderr.write("PAEM guard: invalid workspace_roots; checkpoint health unknown.\n")
+        print("{}")
+        return 0
+    if payload.get("loop_count", 0):
+        print("{}")
+        return 0
     session_id = payload.get("conversation_id")
     _warn_if_unmatched(payload, bool(workspace_roots), session_id is not None)
     cwd = workspace_roots[0] if workspace_roots else os.getcwd()

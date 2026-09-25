@@ -20,6 +20,12 @@ time, record the claim as **unverified**, not as passed.
 
 ### 1. Repository
 
+- Saved-state status first, when `scripts/paem_checkpoint.py` is installed:
+  `python scripts/paem_checkpoint.py check --target .`. It tells you whether the
+  record you are about to verify is even still bound to this repository. A
+  `stale` result means the checkpoint is valid but the code moved, so every
+  claim in it needs re-checking rather than spot-checking; `invalid` or
+  `inconsistent` means stop and report before verifying anything.
 - Current branch
 - Dirty / staged / untracked files (`git status` or equivalent VCS command)
 - Recent commits (`git log` or equivalent), if a VCS is in use

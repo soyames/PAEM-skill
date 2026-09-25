@@ -45,7 +45,8 @@ Initialize .paem/, break work into tasks, checkpoint after each slice.
 Continue from the latest checkpoint. Verify first.
 ```
 
-Or attach `.paem/project_summary.md` and `.paem/latest_checkpoint.json` as context.
+Or attach `.paem/project_summary.md` and the checkpoint that `python
+<skill>/scripts/paem_checkpoint.py check --target .` reports as current.
 
 ---
 
@@ -57,7 +58,7 @@ Or attach `.paem/project_summary.md` and `.paem/latest_checkpoint.json` as conte
 
 ---
 
-## Deterministic enforcement (optional, nudge only - not a hard block)
+## Stop-hook nudge (optional - never a hard block)
 
 Cursor 1.7+ has a `stop` hook (`.cursor/hooks.json`), but Cursor's own docs
 and community reports describe it as running after the agent has already

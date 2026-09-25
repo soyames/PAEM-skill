@@ -78,7 +78,11 @@ def main() -> int:
     try:
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
+        sys.stderr.write("PAEM guard: malformed hook JSON; checkpoint health unknown.\n")
         payload = {}
+    if not isinstance(payload, dict):
+        sys.stderr.write("PAEM guard: expected a JSON object; checkpoint health unknown.\n")
+        return EXIT_ALLOW
 
     # Mirror Claude Code's stop_hook_active loop guard in case Codex reports
     # an equivalent flag under either name; harmless no-op if it doesn't.

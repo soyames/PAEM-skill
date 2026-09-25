@@ -88,10 +88,11 @@ Defines role, phases, success criteria, and anti-patterns (no silent restarts, n
 | `completed_tasks.md` | Verified done work (do not redo) |
 | `known_issues.md` | Blockers and open questions |
 | `conventions.md` | Naming, style, stack norms |
-| `latest_checkpoint.json` | Newest checkpoint snapshot |
+| `latest_checkpoint.json` | Newest checkpoint snapshot (mirror of the published generation) |
+| `current.json` | Publication manifest: selected checkpoint id + archive SHA-256 |
 | `checkpoints/` | Historical checkpoints |
 | `reports/` | Optional human-readable reports |
-| `resume_prompt.md` | Paste-ready next-session prompt |
+| `resume_prompt.md` | Paste-ready next-session prompt, derived from the same record |
 
 ### 3. Prompt modules (`prompts/`)
 

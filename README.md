@@ -12,7 +12,9 @@ PAEM is an open-source AI orchestration **skill** (protocol + templates + prompt
 - Machine restarts
 - AI provider outages
 
-Instead of restarting work from scratch, PAEM instructs a capable AI to continuously **checkpoint progress to disk**, compress project memory into structured files, and prepare **deterministic resume instructions** so a new session can continue from the latest verified state.
+Instead of restarting work from scratch, PAEM instructs a capable AI to continuously **checkpoint progress to disk**, compress project memory into structured files, and prepare **resume instructions that name the exact saved generation** so a new session can continue from the latest verified state.
+
+When the bundled Python runtime is installed, checkpoints are published as one validated, repository-bound generation instead of four files the agent has to keep in sync by hand, and a session can tell whether a saved checkpoint is still current before trusting it.
 
 > **Honest scope:** PAEM is not a background daemon or hosted service. It works when an AI agent loads this skill and follows the protocol. Continuity lives in `.paem/` files inside *your* project, not in chat history.
 
@@ -41,6 +43,8 @@ Automation platforms exist, but not everyone can set them up or operate them. PA
 | Feature | What it actually means |
 |---------|------------------------|
 | **Checkpoint protocol** | After milestones, write structured state under `.paem/checkpoints/` |
+| **Consistent publication** | `paem_checkpoint.py` writes the archive, pointer, resume text, and manifest as one validated generation, and refuses to clobber a competing session |
+| **Staleness detection** | `paem_checkpoint.py check` reports `current` / `stale` / `inconsistent` / `invalid` / `legacy` before a session trusts a record |
 | **Persistent project memory** | Summaries, tasks, architecture, and issues live on disk |
 | **Context compression** | Prompt modules guide rewriting long chat into short durable files |
 | **Resume prompts** | `.paem/resume_prompt.md` is paste-ready for a new session |
@@ -109,11 +113,24 @@ Or copy the package into your tool's skills directory (see [`examples/`](example
 
 ### 2. Install for your AI tool
 
-Point your agent at this repo's `SKILL.md` (preferred) or `paem.md`, using the guide for your tool.
+Point your agent at this repo's `SKILL.md` (preferred) or `paem.md`, using the guide for your tool. On Claude Code, Codex CLI, Gemini CLI, Cursor or Antigravity, `scripts/install.py` copies the runtime into the right skills directory:
 
-### 3. Start a long-running project
+```bash
+python scripts/install.py --list
+python scripts/install.py --provider claude-code --scope project --target /path/to/your/app
+```
 
-In a new chat on **your application repo** (not only inside this skill repo):
+The installer refuses to overwrite a `paem/` folder it did not write, and records a hash per file so a re-install can tell your edits from its own.
+
+### 3. Initialize state and start a long-running project
+
+From **your application repo** (not only inside this skill repo):
+
+```bash
+python <skill>/scripts/paem_init.py --target .
+```
+
+Then, in a new chat:
 
 ```text
 Use PAEM for this project.
@@ -124,16 +141,33 @@ A PAEM-following agent should:
 
 1. Load or create project state under `.paem/`
 2. Decompose work into small executable tasks
-3. Checkpoint after each milestone
+3. Publish a checkpoint after each milestone
 4. Prepare a resume prompt before likely interruptions
 
-### 4. When interrupted
+Python is optional. Without it the protocol is unchanged - the agent writes the checkpoint files by hand and says so. With it, checkpoints are published as one consistent generation instead of four files that have to be kept in sync.
 
-Open a **new** session and paste:
+### 4. Checkpoint and resume
+
+Publish (the agent does this; shown here so you can see what it runs):
+
+```bash
+python <skill>/scripts/paem_checkpoint.py save --target . \
+    --input record.json --expected-id checkpoint-014
+```
+
+Before trusting saved state - in a new session, or after a crash:
+
+```bash
+python <skill>/scripts/paem_checkpoint.py check --target .     # current / stale / inconsistent / invalid / legacy
+python <skill>/scripts/paem_checkpoint.py resume --target .    # prints the resume text
+```
+
+When interrupted, open a **new** session and paste:
 
 ```text
 Resume this project with PAEM.
-Read .paem/ and continue from the latest checkpoint.
+Run scripts/paem_checkpoint.py check --target . first, then read .paem/ and
+continue from the checkpoint it reports as current.
 ```
 
 Or paste the contents of `.paem/resume_prompt.md`.
@@ -143,10 +177,11 @@ Or paste the contents of `.paem/resume_prompt.md`.
 From the skill repo root:
 
 ```bash
-python scripts/validate_skill.py
+python scripts/validate_skill.py                    # layout, frontmatter, schema, templates
+python -m unittest discover -s tests -v             # installer, initializer, writer, hook adapters
 ```
 
-This checks required files, YAML/JSON shape, templates, and a dry-run init of `.paem/` into a temp directory.
+The first checks required files, YAML/JSON shape, templates, and a dry-run init of `.paem/` into a temp directory. The second drives the real entry points in disposable Git projects it creates and cleans up itself; both run in CI on Ubuntu and Windows, Python 3.11 and 3.12.
 
 ---
 
@@ -186,19 +221,33 @@ PAEM-skill/
 ├── SECURITY.md
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
-├── .gitignore
-├── skill.yaml                 # Portable skill metadata
-├── SKILL.md                   # Agent entry (Claude / Cursor / Grok-style hosts)
-├── paem.md                    # Full execution protocol
+├── skill.yaml                  # Portable skill metadata
+├── SKILL.md                    # Agent entry (Claude / Cursor / Grok-style hosts)
+├── paem.md                     # Full execution protocol
+├── install.sh / install.bat    # Thin wrappers around scripts/install.py
 ├── scripts/
-│   └── validate_skill.py      # Package smoke tests
+│   ├── install.py              # Cross-provider installer (owns its files, hashes them)
+│   ├── paem_init.py            # One-command .paem/ initializer
+│   ├── paem_checkpoint.py      # save / check / resume - consistent publication + staleness
+│   ├── paem_repository.py      # Git observation: worktree, HEAD, index and dirty-file digests
+│   ├── paem_fs.py              # Containment, atomic writes, writer lock
+│   ├── validate_checkpoint.py  # Schema CLI for one or more checkpoint files
+│   ├── paem_schema_lib.py      # Shared JSON Schema subset validator
+│   ├── paem_checkpoint_guard*.py  # Stop-hook adapters (Claude, Codex, Gemini, Cursor)
+│   ├── paem_guard_core.py      # Shared detection logic for every adapter
+│   ├── paem_hook_debug.py      # Captures a host's real hook payload for adapter verification
+│   └── validate_skill.py       # Package smoke tests
+├── tests/                      # Behavior regressions (unittest, stdlib only)
+├── schemas/                    # checkpoint + execution report schemas
+├── templates/                  # Blank skeleton the agent fills in
+├── fixtures/                   # Filled pre-writer .paem/ example for demos and schema tests
 ├── .github/
 │   ├── PULL_REQUEST_TEMPLATE.md
-│   └── ISSUE_TEMPLATE/        # Bug / feature / question forms
+│   ├── ISSUE_TEMPLATE/         # Bug / feature / question / hook-field forms
+│   └── workflows/validate.yml  # validate_skill.py + tests, Ubuntu and Windows
 ├── docs/
 ├── examples/
-├── prompts/
-└── templates/
+└── prompts/
 ```
 
 ---
@@ -215,12 +264,13 @@ When PAEM runs against a software project, it should create:
 ├── completed_tasks.md
 ├── known_issues.md
 ├── conventions.md
-├── latest_checkpoint.json
+├── latest_checkpoint.json     # mirror of the published checkpoint
+├── current.json               # publication manifest (id + archive SHA-256)
 ├── checkpoints/
 │   └── checkpoint-001.json
 ├── reports/                   # optional
 │   └── execution_report-001.md
-└── resume_prompt.md
+└── resume_prompt.md           # derived from the same published record
 ```
 
 These files are the source of truth for **execution memory**. Your git history remains the source of truth for **code**.
@@ -240,6 +290,16 @@ This skill repository's `.gitignore` ignores a local `.paem/` so demos do not po
 > Always resume.
 
 Longer term, PAEM aims to be a **portable execution protocol**: stable checkpoint, summary, and resume formats so work can move across tools without losing continuity. See [docs/roadmap.md](docs/roadmap.md).
+
+## What PAEM does not do
+
+Stated here rather than buried, because the honest version is more useful:
+
+- **It cannot recover work that was never checkpointed.** Checkpoints happen at milestones; a crash between two of them loses that gap. The Stop hook narrows the gap on hosts that have one, but it cannot run after a hard crash or an exhausted quota.
+- **It does not enforce anything by itself.** Checkpointing is an instruction the agent follows. The hook adapters are a best-effort, fail-open check on hosts that support them - see the PLATFORM INTEGRATIONS table in `paem.md`.
+- **It cannot predict rate limits.** No provider exposes remaining quota or credits to a session, so PAEM's time thresholds and transcript phrase scan are heuristics, not telemetry.
+- **It does not verify your work.** A published checkpoint records what the agent claimed, and is labelled `verification_basis: "self_reported"` for exactly that reason. What the tool does check is that the record is well formed and still bound to the repository it was written against.
+- **It is not a hosted service.** No daemon, no account, no telemetry. Files on disk, in your repo.
 
 ---
 

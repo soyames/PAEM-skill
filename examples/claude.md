@@ -53,11 +53,12 @@ Verify the repo, then continue the Next Action only.
 
 ---
 
-## Deterministic enforcement (optional, Claude Code)
+## Stop-hook enforcement (optional, Claude Code)
 
 Everything above relies on the model remembering to checkpoint before
-stopping. Claude Code's `Stop` hook can make that a real, deterministic
-check instead of a self-reported one:
+stopping. Claude Code's `Stop` hook can block a turn that ends with state
+which looks stale - a narrow, best-effort check, not proof that the record is
+verified:
 
 1. Copy `scripts/paem_checkpoint_guard.py` **and** `scripts/paem_guard_core.py`
    into your project, in the same directory (any path is fine, e.g.
@@ -82,14 +83,21 @@ check instead of a self-reported one:
 }
 ```
 
-3. That's it. Before Claude Code ends a turn, the script checks whether
-   `.paem/latest_checkpoint.json` is stale relative to the working tree. If
-   it is, the turn is blocked (exit code 2) and Claude is told to write a
-   checkpoint first; otherwise the turn ends normally.
+3. That's it. Before Claude Code ends a turn, the script re-reads the published
+   generation, validates it against the schema, and compares the repository
+   state the record was bound to against the current HEAD, index and dirty
+   files. A file whose modification time is recent is not accepted on that
+   basis alone - a truncated or superseded checkpoint blocks just like an old
+   one. It also refuses a generation whose pointer or resume text disagrees.
+   When the state looks stale or invalid the turn is blocked (exit code 2) and
+   Claude is told to publish a checkpoint first; otherwise the turn ends
+   normally.
 
-The guard fails open (never blocks) on unexpected errors or when `.paem/`
-isn't present, and honors `PAEM_SKIP_GUARD=1` for deliberately uncheckpointed
-work. See `docs/checkpointing.md` for the failure mode this closes.
+The guard fails open (never blocks) on unexpected errors, on malformed host
+payloads and when `.paem/` isn't present, and honors `PAEM_SKIP_GUARD=1` for
+deliberately uncheckpointed work. It cannot run after a hard crash or an
+exhausted quota, so it complements milestone checkpoints rather than replacing
+them. See `docs/checkpointing.md` for the failure mode this closes.
 
 ## Tips
 

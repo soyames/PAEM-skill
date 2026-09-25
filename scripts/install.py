@@ -42,21 +42,34 @@ never overwrites files outside the destination skill folder.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+import os
 import shutil
 import sys
 from pathlib import Path
 
+from paem_fs import atomic_write, safe_path
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-RUNTIME_TOP_LEVEL_FILES = ["SKILL.md", "paem.md"]
-RUNTIME_DIRS = ["prompts", "templates"]
+RUNTIME_TOP_LEVEL_FILES = ["SKILL.md", "paem.md", "skill.yaml", "LICENSE"]
+RUNTIME_DIRS = ["prompts", "templates", "schemas", "docs", "examples"]
 RUNTIME_SCRIPTS = [
     "paem_guard_core.py",
     "paem_checkpoint_guard.py",
     "paem_checkpoint_guard_codex.py",
     "paem_checkpoint_guard_gemini.py",
     "paem_checkpoint_guard_cursor.py",
+    "paem_init.py",
+    "validate_checkpoint.py",
+    "paem_schema_lib.py",
+    "paem_fs.py",
+    "paem_repository.py",
+    "paem_checkpoint.py",
+    "paem_hook_debug.py",
 ]
+MANIFEST = ".paem-install.json"
 
 # rel path is relative to: project target dir (for "project") or home dir (for "global")
 PATHS: dict[str, dict[str, str | None]] = {
@@ -79,27 +92,42 @@ def print_table() -> None:
 
 
 def copy_runtime_files(dest: Path, dry_run: bool) -> list[str]:
+    dest = Path(os.path.abspath(dest))
+    safe_path(dest, ".")
+    relative_files = list(RUNTIME_TOP_LEVEL_FILES) + [f"scripts/{name}" for name in RUNTIME_SCRIPTS]
+    for directory in RUNTIME_DIRS:
+        for source in sorted((REPO_ROOT / directory).rglob("*")):
+            safe_path(REPO_ROOT, source.relative_to(REPO_ROOT))
+            if source.is_file():
+                relative_files.append(source.relative_to(REPO_ROOT).as_posix())
+    payload = {}
+    for relative in relative_files:
+        payload[relative] = safe_path(REPO_ROOT, relative).read_bytes()
+    hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
+    marker = safe_path(dest, MANIFEST)
+    owned = {}
+    if marker.exists():
+        metadata = json.loads(marker.read_text(encoding="utf-8"))
+        if not isinstance(metadata, dict) or metadata.get("package") != "paem" or not isinstance(metadata.get("files"), dict):
+            raise ValueError("Invalid PAEM installation manifest; leave the directory intact and inspect it")
+        owned = metadata["files"]
+    # A prior unmarked manual install may be adopted only when colliding files
+    # are byte-identical. Preflight the whole payload before the first write.
+    for relative, data in payload.items():
+        target = safe_path(dest, relative)
+        if target.exists():
+            if not target.is_file():
+                raise ValueError(f"Destination is not a file: {target}")
+            digest = hashlib.sha256(target.read_bytes()).hexdigest()
+            if digest not in (hashes[relative], owned.get(relative)):
+                raise ValueError(f"Refusing to overwrite foreign or edited file: {target}. Back it up outside this folder before retrying.")
     actions = []
-
-    def do_copy(src: Path, dst: Path, is_dir: bool) -> None:
-        actions.append(f"{'[dry-run] ' if dry_run else ''}{src.relative_to(REPO_ROOT)} -> {dst}")
-        if dry_run:
-            return
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if is_dir:
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-        else:
-            shutil.copy2(src, dst)
-
-    for name in RUNTIME_TOP_LEVEL_FILES:
-        do_copy(REPO_ROOT / name, dest / name, is_dir=False)
-    for name in RUNTIME_DIRS:
-        do_copy(REPO_ROOT / name, dest / name, is_dir=True)
-    scripts_src_dir = REPO_ROOT / "scripts"
-    for name in RUNTIME_SCRIPTS:
-        src = scripts_src_dir / name
-        if src.is_file():
-            do_copy(src, dest / "scripts" / name, is_dir=False)
+    for relative, data in payload.items():
+        actions.append(f"{'[dry-run] ' if dry_run else ''}{relative} -> {dest / relative}")
+        if not dry_run:
+            atomic_write(dest, relative, data)
+    if not dry_run:
+        atomic_write(dest, MANIFEST, (json.dumps({"package": "paem", "files": hashes}, indent=2) + "\n").encode())
     return actions
 
 
@@ -132,19 +160,26 @@ def main() -> int:
         return 1
 
     if args.scope == "global":
-        dest = Path.home() / rel
+        if args.provider == "codex" and os.environ.get("CODEX_HOME"):
+            dest = Path(os.environ["CODEX_HOME"]).expanduser() / "skills/paem"
+        else:
+            dest = Path.home() / rel
     else:
         dest = Path(args.target).resolve() / rel
 
     print(f"Installing PAEM for {args.provider} ({args.scope} scope) into:\n  {dest}\n")
-    actions = copy_runtime_files(dest, args.dry_run)
+    try:
+        actions = copy_runtime_files(dest, args.dry_run)
+    except (OSError, ValueError) as exc:
+        print(f"Installation refused: {exc}", file=sys.stderr)
+        return 1
     for line in actions:
         print(f"  {line}")
 
     if args.dry_run:
         print("\nDry run - nothing was written. Re-run without --dry-run to install.")
     else:
-        print(f"\nDone. {args.provider} should discover the skill on its next session.")
+        print(f"\nFiles installed. Verify PAEM discovery in a new {args.provider} session; installation alone does not prove host support.")
         if args.provider in ("codex", "antigravity") and args.scope == "project":
             other = "antigravity" if args.provider == "codex" else "codex"
             print(f"Note: this same .agents/skills/paem/ path is also where {other} looks - "

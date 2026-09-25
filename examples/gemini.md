@@ -57,7 +57,7 @@ Gemini is a common fallback when another provider is rate-limited. Because `.pae
 2. Open Gemini on the same clone
 3. Continue without re-planning the entire system
 
-## Deterministic enforcement (optional)
+## Stop-hook check (optional)
 
 Gemini CLI's hooks are enabled by default (v0.26.0+). Copy
 `scripts/paem_checkpoint_guard_gemini.py` **and** `scripts/paem_guard_core.py`
@@ -69,6 +69,10 @@ or nothing at all when hooks do write JSON - bare exit codes sidestep that
 entirely. As with the Codex adapter, the block/allow contract is
 documented and verified against the pattern; the specific stdin field
 names it reads have not been checked against a live Gemini CLI install.
+
+It is a best-effort, fail-open check, not a guarantee: it blocks only when the
+published generation looks stale or invalid, and it cannot run after a hard
+crash or an exhausted quota.
 
 ## Tips
 

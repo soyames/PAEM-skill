@@ -49,14 +49,15 @@ New thread:
 
 ```text
 Resume PAEM project.
-Read .paem/project_summary.md and .paem/latest_checkpoint.json.
+Run: python <skill>/scripts/paem_checkpoint.py check --target .
+Read .paem/project_summary.md and the checkpoint it reports as current.
 Verify git status and completed tasks against the code.
 Continue Next Action only. Do not restart finished work.
 ```
 
 ---
 
-## Deterministic enforcement (optional, experimental)
+## Stop-hook check (optional, experimental)
 
 Codex CLI shipped a hooks system (v0.114+, opt-in, not available on
 Windows). Enable it in `~/.codex/config.toml`:
@@ -80,6 +81,10 @@ imports the core module by relative path). Then wire it as a `Stop` hook in
   }
 }
 ```
+
+The hook is a best-effort, fail-open check: it blocks a turn only when the
+published generation looks stale, invalid or inconsistent, and it cannot run
+after a hard crash or an exhausted quota. Keep checkpointing at milestones.
 
 This uses `scripts/paem_checkpoint_guard_codex.py`, which shares its
 detection logic with the verified Claude Code adapter. Codex's exit-code

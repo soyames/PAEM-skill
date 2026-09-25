@@ -31,9 +31,53 @@ Create a checkpoint after:
 .paem/checkpoints/checkpoint-002.json
 ...
 .paem/latest_checkpoint.json
+.paem/current.json
+.paem/resume_prompt.md
 ```
 
-`latest_checkpoint.json` should always mirror (or clearly point to) the newest checkpoint so resume is one file read.
+`latest_checkpoint.json` mirrors the newest checkpoint so resume is one file
+read, and `resume_prompt.md` restates that same record. Both are derived files:
+they must describe the *same* generation as `current.json`, which names the
+selected checkpoint and the SHA-256 of its archive.
+
+### Managed publication (recommended)
+
+Hand-writing the three derived files is what lets an interrupted save - or two
+sessions saving at once - leave a pointer, an archive and a resume prompt that
+describe different generations. When Python is available, publish through the
+bundled writer instead:
+
+```bash
+python scripts/paem_init.py --target .            # once, to create .paem/
+
+# Write the record body to a file, then publish it:
+python scripts/paem_checkpoint.py save --target . \
+    --input record.json --expected-id checkpoint-014
+
+python scripts/paem_checkpoint.py check --target .    # inspect, read-only
+python scripts/paem_checkpoint.py resume --target .   # print the resume text
+```
+
+The writer validates the record against
+[`schemas/checkpoint.schema.json`](../schemas/checkpoint.schema.json),
+fingerprints the Git state it is bound to, writes the archive first and
+`current.json` last, and refuses to publish if the repository changed while it
+was saving. `--expected-id` is the checkpoint you last read; if another session
+published in the meantime the save fails instead of clobbering it. `check` exits
+0 for `current`, 2 for `stale` / `invalid` / `inconsistent` / `legacy`, and 1
+when state is unavailable. `resume` prints the resume text on `current` and the
+full status object otherwise.
+
+Managed records are written as `schema_version: 1.1.0` with
+`parent_checkpoint_id`, `repository_state` and
+`verification_basis: "self_reported"` added. Version `1.0.0` records stay
+readable; a pre-writer `.paem/` is reported as `legacy` until a managed save
+adopts it with `--adopt-legacy`, which backs the old files up under
+`.paem/legacy/` before publishing.
+
+If Python is unavailable, use the manual flow below. A hand-written checkpoint
+is still better than none - just say so in your confirmation, and expect `check`
+to report `legacy` until the state is adopted.
 
 ### Schema
 
@@ -43,7 +87,7 @@ Required conceptual fields:
 
 | Field | Description |
 |-------|-------------|
-| `schema_version` | Format version (`1.0.0`) |
+| `schema_version` | Format version (`1.0.0`; managed saves write `1.1.0`) |
 | `checkpoint_id` | Stable id, e.g. `checkpoint-014` |
 | `timestamp` | ISO-8601 UTC |
 | `current_task` | What was in flight |
@@ -88,7 +132,8 @@ A checkpoint is incomplete unless related memory is refreshed:
 2. `.paem/task_list.md` / `completed_tasks.md` - move finished work
 3. `.paem/known_issues.md` - if new issues appeared
 4. `.paem/architecture.md` - if decisions changed
-5. `.paem/resume_prompt.md` - always
+5. `.paem/resume_prompt.md` - always when hand-writing; the managed writer
+   regenerates it from the published record on every save
 
 Optional: `.paem/reports/execution_report-NNN.md`
 

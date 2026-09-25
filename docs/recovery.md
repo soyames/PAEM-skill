@@ -54,6 +54,30 @@ Before a session ends (planned or emergency), ensure these exist and are current
 4. `.paem/resume_prompt.md`
 5. Optional: latest execution report
 
+## Saved-state statuses
+
+`python scripts/paem_checkpoint.py check --target .` reports one status. Read it
+before loading anything, and do not collapse two different situations into one:
+
+| Status | What it means | What to do |
+|--------|---------------|------------|
+| `current` | Archive, pointer and resume text agree, and the repository still matches the record | Load it and continue |
+| `stale` | The record is valid, but HEAD, the index or working files moved since it was saved | Its `verification` block is no longer evidence; re-verify, then continue |
+| `inconsistent` | The pointer or resume text describes a different generation than `current.json`, or an interrupted save left a newer archive behind | Report exactly what disagrees; do not silently pick one |
+| `invalid` | The record is malformed, fails the schema, or an archive digest does not match the manifest | Repair or explicitly supersede; never present it as current |
+| `legacy` | A pre-writer `.paem/` with no publication manifest | Inspect it, then adopt with `--adopt-legacy` on the next managed save |
+| `missing` | No `.paem/`, or nothing published yet | Initialize with `paem_init.py` and start from a baseline checkpoint |
+| `unavailable` | Git or the filesystem could not be read well enough to judge | Say so; do not report `current` on a guess |
+
+A recent file modification time is not one of these statuses. A checkpoint
+written a minute ago can still be truncated, unbound to the repository, or
+superseded by one the pointer never learned about.
+
+When Python is unavailable, replicate this by hand: compare
+`latest_checkpoint.json` against the archive it claims to mirror, check that
+`resume_prompt.md` names the same checkpoint id, and treat any mismatch as
+`inconsistent` rather than trusting the newest filename.
+
 ### Resume prompt contents
 
 A good `resume_prompt.md` includes:
@@ -75,11 +99,13 @@ Template language lives in [`prompts/resume.md`](../prompts/resume.md) and [`pro
 ```text
 1. Open a new session (same or different provider).
 2. Load PAEM skill / paste resume prompt.
-3. Read .paem/project_summary.md and latest_checkpoint.json.
-4. Run repository verification (git status, key files).
-5. Confirm completed_tasks against the codebase.
-6. Execute next_action only.
-7. Checkpoint early after the first successful step.
+3. Check saved state (scripts/paem_checkpoint.py check --target .) and read the
+   status before loading anything.
+4. Read .paem/project_summary.md and the selected checkpoint.
+5. Run repository verification (git status, key files).
+6. Confirm completed_tasks against the codebase.
+7. Execute next_action only.
+8. Publish a checkpoint early after the first successful step.
 ```
 
 ### Safe to resume

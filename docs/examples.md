@@ -12,15 +12,19 @@ Short stories that show PAEM in real failure modes. Provider-specific install st
 
 **With PAEM:**
 
-1. As the limit approaches (or when the error appears), PAEM writes:
+1. As the limit approaches (or when the error appears), PAEM publishes:
    - `checkpoint-012.json`
+   - `latest_checkpoint.json` and `resume_prompt.md`, generated from that record
+   - `current.json`, the manifest that says checkpoint-012 is the current one
    - updated `task_list.md` / `completed_tasks.md`
-   - `resume_prompt.md`
+
+   One `paem_checkpoint.py save` writes the first three together. If the session dies mid-save, the archive is already there and the manifest is not, so the previous generation stays current and the half-written one shows up as incomplete rather than as progress.
 2. Two hours later you open a new chat and paste:
 
 ```text
 Resume this project with PAEM.
-Read .paem/ and continue from the latest checkpoint.
+Run scripts/paem_checkpoint.py check --target . first, then read .paem/ and
+continue from the checkpoint it reports as current.
 ```
 
 3. Claude loads state, verifies `src/routes/auth.ts`, sees registration is partial, and continues **only** the unfinished validation - not the whole auth system.
@@ -37,7 +41,7 @@ Read .paem/ and continue from the latest checkpoint.
    - completed: token model + migration
    - in progress: send-email hook
    - next action: wire token create on forgot-password route
-2. New Codex chat reads `.paem/latest_checkpoint.json`.
+2. New Codex chat runs the state check and reads the checkpoint it reports as current.
 3. Continues from task 84 without regenerating the model.
 
 ---
@@ -107,12 +111,32 @@ No dependency on chat history surviving the reboot.
 
 ---
 
+## Example 7 - The checkpoint that looked fine and wasn't
+
+**Situation:** You saved context on Tuesday. Someone (you, on another machine, or a teammate) pushed four commits and touched the same files. You resume on Thursday.
+
+**Without the check:** The saved note still says "next: wire the token create on the forgot-password route". You do it again, on top of code that already has it, because nothing compared the note to the repository.
+
+**With PAEM:**
+
+```bash
+python scripts/paem_checkpoint.py check --target .
+```
+
+reports `stale` and names what moved - HEAD differs from the revision the record was bound to, and the dirty digest changed. The record itself is valid; its `verification` block simply stopped being evidence the moment the code moved. The agent re-verifies, then continues, and says so instead of presenting the old note as current.
+
+The same command reports `inconsistent` when `latest_checkpoint.json` or `resume_prompt.md` describes a different generation than the manifest - the case where a save was interrupted and only *some* of the four files were rewritten. Before the manifest existed, nothing could tell those apart from a good save.
+
+**Lesson:** a recent timestamp is not evidence. A bound revision plus a manifest is.
+
+---
+
 ## Minimal happy path (checklist)
 
 1. Start: "Use PAEM. Goal: …"
-2. Agent creates `.paem/` and Checkpoint 0
-3. Work in small tasks; checkpoint often
+2. Agent creates `.paem/` (`paem_init.py`) and publishes Checkpoint 0
+3. Work in small tasks; publish a checkpoint at each milestone
 4. Interrupt happens
-5. New session: resume prompt
+5. New session: run the state check, then the resume prompt
 6. Verify → continue → checkpoint
 7. Repeat until done

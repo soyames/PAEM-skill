@@ -1,2 +1,3 @@
 @echo off
-python scripts\install.py %*
+python "%~dp0scripts\install.py" %*
+exit /b %errorlevel%

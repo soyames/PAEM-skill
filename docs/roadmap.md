@@ -30,12 +30,13 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [x] Security policy + issue/PR templates for public contributions
 - [x] Package smoke tests (`scripts/validate_skill.py`) + CI
 - [x] `A-G-E-N-T-S.md` integration (`templates/project_agent_snippet.md`, read/append during Phase 1)
-- [x] Deterministic Stop-hook enforcement for Claude Code (`scripts/paem_checkpoint_guard.py`)
+- [x] Stop-hook check for Claude Code (`scripts/paem_checkpoint_guard.py`) - best-effort and fail-open, not enforcement that can survive a crash or an exhausted quota
 - [x] Shared detection core (`scripts/paem_guard_core.py`) + adapters for Codex CLI and Gemini CLI (documented contract, best-effort field names)
 - [x] Best-effort Cursor adapter using `followup_message` (Cursor's `stop` hook isn't a reliable hard block)
 - [x] Rate-limit heuristics: self-tracked elapsed time against `.paem/provider_budgets.md`, reactive transcript phrase scan
 - [x] Single-writer principle for subagents/multi-agent orchestration + `subagents` checkpoint field
 - [x] Cross-provider installer (`scripts/install.py`) copying skill files to each host's real skills directory (Claude Code, Codex CLI, Gemini CLI, Cursor, Antigravity)
+- [x] `.paem/current.json` publication manifest (selected checkpoint id + archive SHA-256) - the one file that says which generation is current
 
 ---
 
@@ -59,6 +60,20 @@ The open-source AI community does not yet have a widely adopted portable checkpo
 - [x] Validate-checkpoint CLI (`scripts/validate_checkpoint.py`, schema + required fields, shares `scripts/paem_schema_lib.py` with CI)
 - [x] Better archive policy for long projects (`docs/checkpointing.md` - count/time triggers, fold-before-archive rule, what not to do)
 - [x] More provider examples: Aider (`examples/aider.md`) and Continue (`examples/continue.md`) - both use an explicitly-loaded conventions/rules file, not a skills directory, so they're documented separately from `scripts/install.py` rather than forced into that model. Windsurf intentionally still excluded - see the v1.1 item above and the PLATFORM INTEGRATIONS table in `paem.md`.
+
+---
+
+## v1.3 - Validated checkpoints
+
+- [x] Consistent publication (`scripts/paem_checkpoint.py save`): validate, fingerprint the repository, write the archive, the pointer, the resume text and the manifest as one generation. Refuses to publish if another session saved first (`--expected-id`) or if the repository changed mid-save
+- [x] Repository binding per record: worktree root, git dir, HEAD, branch, and a digest over the index and dirty-file bytes (`scripts/paem_repository.py`)
+- [x] Read-only state check (`scripts/paem_checkpoint.py check`) reporting `current` / `stale` / `inconsistent` / `invalid` / `legacy` / `missing` / `unavailable`, with the specific disagreement
+- [x] Legacy adoption (`--adopt-legacy`) that backs the old pointer and resume text up under `.paem/legacy/` before publishing - never rewrites history in place
+- [x] Behavior regressions driving the real installer, initializer, writer and hook adapters in disposable projects (`tests/`, wired into CI on Ubuntu and Windows, Python 3.11/3.12)
+- [x] Schema 1.1.0 (`parent_checkpoint_id`, `repository_state`, `verification_basis`) with a migration row in `docs/schema-migration.md`
+- [x] Documentation aligned with the runtime: publish instead of hand-editing four files, and `verification_basis: self_reported` stated wherever verification is discussed
+- [ ] Adopt the manifest-backed flow in the provider examples that still show a purely hand-written checkpoint (`examples/aider.md`, `examples/continue.md`, `examples/openhands.md` have no Python step at all today)
+- [ ] Independent witness for test results (today every checkpoint says `self_reported`; a real witness needs a target-independent completion signal, which nothing here can produce yet)
 
 ---
 

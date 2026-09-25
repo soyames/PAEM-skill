@@ -14,11 +14,22 @@ Priority order:
 
 ### Must write
 
-- Fresh checkpoint (even if partial)
+- Fresh checkpoint (even if partial). Publish it when Python is available -
+  `python scripts/paem_checkpoint.py save --target . --input record.json --expected-id <last id>`
+  - so the archive, pointer and resume text cannot drift apart mid-interruption.
+  If another session published first the save is refused; reload and retry
+  rather than overwriting it.
 - Updated project summary
-- Honest verification status
-- `.paem/resume_prompt.md` with paste-ready text
+- Honest verification status. A record published this way reads
+  `verification_basis: "self_reported"` - that is the accurate label for work you
+  did not independently re-check while stopping.
+- If you hand-wrote the checkpoint instead, `.paem/resume_prompt.md` with
+  paste-ready text that names the same checkpoint id
 - `known_issues.md` entry if the failure itself matters
+
+If the interruption was already fatal (the process is gone), skip to whatever
+was last published and read `docs/recovery.md` for what each `check` status
+means before promising the user a resume.
 
 ### Recovery status
 
