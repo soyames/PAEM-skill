@@ -15,6 +15,8 @@ of the spec, reconsider that tradeoff.
 from __future__ import annotations
 
 import re
+from datetime import datetime
+import math
 
 _TYPE_MAP = {
     "string": str,
@@ -39,6 +41,10 @@ def _check_type(value: object, expected: str) -> bool:
 def validate(instance: object, schema: dict, path: str = "$") -> list[str]:
     """Validate instance against schema, returning a list of error strings."""
     errors: list[str] = []
+    if not isinstance(schema, dict):
+        raise ValueError("Schema must be an object")
+    if isinstance(instance, float) and not math.isfinite(instance):
+        return [f"{path}: non-finite numbers are not JSON values"]
 
     expected_types = schema.get("type")
     if expected_types is not None:
@@ -53,6 +59,14 @@ def validate(instance: object, schema: dict, path: str = "$") -> list[str]:
     if "pattern" in schema and isinstance(instance, str):
         if not re.match(schema["pattern"], instance):
             errors.append(f"{path}: {instance!r} does not match pattern {schema['pattern']!r}")
+
+    if schema.get("format") == "date-time" and isinstance(instance, str):
+        try:
+            parsed = datetime.fromisoformat(instance.replace("Z", "+00:00"))
+            if "T" not in instance or parsed.tzinfo is None:
+                raise ValueError("timezone required")
+        except ValueError:
+            errors.append(f"{path}: expected an ISO 8601 timestamp with timezone")
 
     if "minimum" in schema and isinstance(instance, (int, float)) and not isinstance(instance, bool):
         if instance < schema["minimum"]:

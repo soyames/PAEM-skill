@@ -41,14 +41,17 @@ def main() -> int:
     try:
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
+        sys.stderr.write("PAEM guard: malformed hook JSON; checkpoint health unknown.\n")
         payload = {}
+    if not isinstance(payload, dict):
+        sys.stderr.write("PAEM guard: expected a JSON object; checkpoint health unknown.\n")
+        return EXIT_ALLOW
 
     if payload.get("stop_hook_active"):
         return EXIT_ALLOW
 
-    project_root = Path(payload.get("cwd") or os.getcwd())
-
     try:
+        project_root = Path(payload.get("cwd") or os.getcwd())
         should_block, message = evaluate(
             project_root,
             provider_key="claude-code",

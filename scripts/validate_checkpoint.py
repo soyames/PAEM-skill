@@ -22,6 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paem_schema_lib  # noqa: E402
+from paem_checkpoint import read_json, validate_record
 
 DEFAULT_SCHEMA = Path(__file__).resolve().parents[1] / "schemas" / "checkpoint.schema.json"
 
@@ -38,12 +39,11 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        schema = json.loads(args.schema.read_text(encoding="utf-8"))
-    except OSError as exc:
+        schema = read_json(args.schema)
+        if not isinstance(schema, dict):
+            raise ValueError("Schema must be a JSON object")
+    except (OSError, ValueError, UnicodeError) as exc:
         print(f"Cannot read schema {args.schema}: {exc}", file=sys.stderr)
-        return 1
-    except json.JSONDecodeError as exc:
-        print(f"Schema {args.schema} is not valid JSON: {exc}", file=sys.stderr)
         return 1
 
     exit_code = 0
@@ -54,13 +54,13 @@ def main() -> int:
             exit_code = 1
             continue
         try:
-            instance = json.loads(path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
+            instance = read_json(path)
+        except (OSError, ValueError, UnicodeError) as exc:
             print(f"FAIL {path}: not valid JSON ({exc})")
             exit_code = 1
             continue
 
-        errors = paem_schema_lib.validate(instance, schema)
+        errors = validate_record(instance) if args.schema.resolve() == DEFAULT_SCHEMA.resolve() else paem_schema_lib.validate(instance, schema)
         if errors:
             print(f"FAIL {path}")
             for err in errors:
