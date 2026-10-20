@@ -517,7 +517,7 @@
               <pre><code id="cmd-any">npx skills add soyames/PAEM-skill</code></pre>
               <button class="copy" type="button" data-copy="cmd-any" aria-label="Copy command">Copy</button>
             </div>
-            <p>Uses the open <a href="https://github.com/vercel-labs/skills">skills</a> CLI, which asks which agents to install for. It copies the whole repository.</p>
+            <p>Uses the open <a href="https://github.com/vercel-labs/skills">skills</a> CLI, which asks which agents to install for. It copies only the skill folder.</p>
           </div>
 
           <div role="tabpanel" id="panel-py" aria-labelledby="tab-py">
@@ -535,7 +535,7 @@ python PAEM-skill/scripts/install.py --list                                 <spa
           <div role="tabpanel" id="panel-gemini" aria-labelledby="tab-gemini">
             <h3 class="panel-title">Gemini CLI</h3>
             <div class="cmd">
-              <pre><code id="cmd-gemini">gemini skills install https://github.com/soyames/PAEM-skill</code></pre>
+              <pre><code id="cmd-gemini">gemini skills install https://github.com/soyames/PAEM-skill --path skills/paem</code></pre>
               <button class="copy" type="button" data-copy="cmd-gemini" aria-label="Copy command">Copy</button>
             </div>
             <p>Gemini CLI's own installer. Project-level skills load only in a folder Gemini trusts.</p>
@@ -588,7 +588,7 @@ Goal: implement user authentication with registration, login and password reset.
             </tbody>
           </table>
         </div>
-        <p class="note">Codex CLI was checked with <code>codex debug prompt-input</code>, Gemini CLI with <code>gemini skills list</code>. Per-tool guides and exact versions are in the <a href="https://github.com/soyames/PAEM-skill/tree/main/examples">examples</a> and the discovery table in <a href="https://github.com/soyames/PAEM-skill/blob/main/paem.md">paem.md</a>.</p>
+        <p class="note">Codex CLI was checked with <code>codex debug prompt-input</code>, Gemini CLI with <code>gemini skills list</code>. Per-tool guides and exact versions are in the <a href="https://github.com/soyames/PAEM-skill/tree/main/skills/paem/examples">examples</a> and the discovery table in <a href="https://github.com/soyames/PAEM-skill/blob/main/skills/paem/paem.md">paem.md</a>.</p>
       </div>
     </section>
 
@@ -648,7 +648,7 @@ Goal: implement user authentication with registration, login and password reset.
         </div>
         <div class="cta-row">
           <a class="btn primary" href="https://github.com/soyames/PAEM-skill">Star on GitHub</a>
-          <a class="btn" href="https://github.com/soyames/PAEM-skill/blob/main/paem.md">Read the protocol</a>
+          <a class="btn" href="https://github.com/soyames/PAEM-skill/blob/main/skills/paem/paem.md">Read the protocol</a>
         </div>
       </div>
     </section>
@@ -659,7 +659,7 @@ Goal: implement user authentication with registration, login and password reset.
       <span>PAEM · MIT licensed · Built by <a href="https://github.com/soyames">Yao Amevi A. Sossou</a></span>
       <nav aria-label="Footer">
         <a href="https://github.com/soyames/PAEM-skill">GitHub</a>
-        <a href="https://github.com/soyames/PAEM-skill/tree/main/docs">Docs</a>
+        <a href="https://github.com/soyames/PAEM-skill/tree/main/skills/paem/docs">Docs</a>
         <a href="https://github.com/soyames/PAEM-skill/blob/main/CHANGELOG.md">Changelog</a>
         <a href="https://github.com/soyames/PAEM-skill/issues">Issues</a>
       </nav>
