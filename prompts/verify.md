@@ -21,7 +21,8 @@ time, record the claim as **unverified**, not as passed.
 ### 1. Repository
 
 - Saved-state status first, when `scripts/paem_checkpoint.py` is installed:
-  `python scripts/paem_checkpoint.py check --target .`. It tells you whether the
+  `python <skill-dir>/scripts/paem_checkpoint.py check --target .`, run from the project
+  root (`<skill-dir>` is the folder holding PAEM's SKILL.md). It tells you whether the
   record you are about to verify is even still bound to this repository. A
   `stale` result means the checkpoint is valid but the code moved, so every
   claim in it needs re-checking rather than spot-checking; `invalid` or

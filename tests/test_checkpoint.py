@@ -209,9 +209,14 @@ class ContainmentTests(RuntimeCase):
         self.assertEqual((installed / "templates/checkpoint.json").read_text(), "user-edited")
         self.assertEqual((installed / ".paem-install.json").read_bytes(), manifest)
 
-    def test_global_codex_home_is_honored(self):
+    def test_global_codex_install_uses_shared_user_dir(self):
+        # Codex documents ~/.agents/skills/ for user skills; CODEX_HOME no longer redirects it.
+        home = Path(self.temp.name) / "isolated home"
+        home.mkdir()
         env = os.environ.copy()
-        env["CODEX_HOME"] = str(Path(self.temp.name) / "isolated codex")
+        env.update(HOME=str(home), USERPROFILE=str(home),
+                   CODEX_HOME=str(Path(self.temp.name) / "isolated codex"))
         result = self.script("install.py", "--provider", "codex", "--scope", "global", env=env)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertTrue((Path(env["CODEX_HOME"]) / "skills/paem/SKILL.md").is_file())
+        self.assertTrue((home / ".agents/skills/paem/SKILL.md").is_file())
+        self.assertFalse(Path(env["CODEX_HOME"]).exists())

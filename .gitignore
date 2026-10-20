@@ -33,6 +33,9 @@ tmp/
 cache/
 *.tmp
 
+# Upload packages built by `scripts/install.py --zip`
+dist/
+
 # Local PAEM runtime state (project-specific; do not publish sample noise)
 # Keep templates; ignore live runtime dirs if someone runs PAEM inside this repo
 .paem/

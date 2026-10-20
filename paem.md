@@ -180,9 +180,11 @@ If the project has an `A-G-E-N-T-S.md` (remove the dashes):
 
 - Read it during Phase 1 as part of loading state. It may define the actual
   verify/test commands to run in Phase 2.
-- If it has no pointer to `.paem/`, append the block from
+- If it has no pointer to `.paem/`, offer to append the block from
   `templates/project_agent_snippet.md` so any agent - regardless of which tool
-  opens the project next - knows to check `.paem/` before starting work.
+  opens the project next - knows to check `.paem/` before starting work. Ask
+  first: the file is shared, usually committed, and changes how every agent
+  behaves in the repo, so the user decides whether PAEM edits it.
 
 If the project has no `A-G-E-N-T-S.md`, do not create one unprompted. Mention to
 the user that adding one (with the PAEM pointer) would let other tools share
@@ -518,13 +520,26 @@ documented skills directory you name. Documented does not always mean
 confirmed - the table below separates the two, based on real installs, not
 just what each provider's docs say.
 
+Most hosts now also read the shared `.agents/skills/` directory (project) and
+`~/.agents/skills/` (user), so `--provider agents` is the one install that
+covers the most tools. Claude Code and Kiro read only their own directories.
+
 | Host | Documented path | Empirically confirmed | Status |
 |------|-----------------|------------------------|--------|
 | Claude Code | `.claude/skills/paem/` (project), `~/.claude/skills/paem/` (global) | Yes | Skill loads and lists correctly, both via a repo install and the packaged Cowork skill |
-| Codex CLI | `.agents/skills/paem/` (project), `~/.codex/skills/paem/` (global) | Not yet tested | Install succeeds (files land in the right place); discovery not yet confirmed |
-| Gemini CLI | `.gemini/skills/paem/` (project), `~/.gemini/skills/paem/` (global) | Not yet tested | Install succeeds; discovery not yet confirmed (also blocked by a Gemini CLI individual-tier auth change pointing users to Antigravity, as of this writing) |
+| Codex CLI | `.agents/skills/paem/` (project), `~/.agents/skills/paem/` (global) | Yes (v0.162.1, 2026-10-20) | PAEM appears in the model-visible skills block (`codex debug prompt-input`) when installed in `.agents/skills/` or `.codex/skills/` (project) or the legacy `$CODEX_HOME/skills/` (user). The same block lists `~/.agents/skills/` as a scanned user root, matching Codex's docs |
+| Gemini CLI | `.gemini/skills/paem/` or `.agents/skills/paem/` (project), `~/.gemini/skills/paem/` or `~/.agents/skills/paem/` (global) | Yes, user scope (v0.64.0, 2026-10-20) | `gemini skills list` shows `paem [Enabled]` from both user directories, and `gemini skills install <repo>` installs it. Workspace skills load only in a folder Gemini trusts - an untrusted folder skips them silently |
+| Cursor | `.cursor/skills/paem/` or `.agents/skills/paem/` (project), `~/.cursor/skills/paem/` or `~/.agents/skills/paem/` (global) | Not yet tested | Documented by Cursor, which also reads `.claude/skills/` and `.codex/skills/` for compatibility |
+| GitHub Copilot | `.github/skills/paem/` or `.agents/skills/paem/` (project), `~/.copilot/skills/paem/` or `~/.agents/skills/paem/` (personal) | Not yet tested | Documented by GitHub; also reads `.claude/skills/` |
+| OpenCode | `.opencode/skills/paem/` or `.agents/skills/paem/` (project), `~/.config/opencode/skills/paem/` or `~/.agents/skills/paem/` (global) | Not yet tested | Documented by OpenCode; also reads `.claude/skills/` |
+| Devin Desktop (formerly Windsurf), OpenHands, goose | `.agents/skills/paem/` (project), `~/.agents/skills/paem/` (global) | Not yet tested | Each documents `.agents/skills/` as a discovery path; use `--provider agents` |
+| Kiro | `.kiro/skills/paem/` (workspace), `~/.kiro/skills/paem/` (global) | Not yet tested | Documented by Kiro; does not list `.agents/skills/` |
 | Antigravity | `.agents/skills/paem/` (workspace), `~/.gemini/config/skills/paem/` (global) | **No - failed in a controlled test** | Install succeeds (files land in the right place, same directory and frontmatter shape Claude Code loads correctly), but the skill did not appear in Antigravity's skill list. Same result for an unrelated, established third-party skill package with dozens of skills using the identical convention - so this looks like an Antigravity-side gap (unshipped feature, a setting, or a non-scan discovery mechanism), not a PAEM-specific path problem. See `examples/antigravity.md` for the manual-context fallback. |
-| Cursor | `.cursor/skills/paem/` (project only) | Not yet tested | Install succeeds; discovery not yet confirmed |
+
+Installing into two directories one host reads (for example `.claude/skills/`
+and `.agents/skills/` with Cursor) can make PAEM appear twice in that host's
+skill list. The copies are identical, so either one works; to avoid the
+duplicate, install once into a directory every tool you use reads.
 
 "Install succeeds" only means the files landed where the provider's own
 docs say to put them - it is not a claim that the host actually reads them.

@@ -20,13 +20,29 @@ That's `~/.claude/skills/paem/` (global) or `<your-repo>/.claude/skills/paem/`
 (project) if you'd rather copy it by hand. Claude Code discovers skills via
 `SKILL.md` frontmatter (`name: paem`).
 
-### Claude.ai / web
+### Claude.ai and Claude Desktop chats
 
-If skills directories are not available:
+Build the upload package, then add it as a custom skill:
 
-1. Keep this repo cloned beside or inside your project.
-2. At session start, attach or ask Claude to read `paem.md` and `SKILL.md`.
-3. On resume, paste `.paem/resume_prompt.md` and point at `.paem/`.
+```bash
+python scripts/install.py --zip dist/paem.zip
+```
+
+In Claude, go to **Customize > Skills**, click **+**, choose **Create skill >
+Upload a skill**, and pick `dist/paem.zip`. Skills need **Code execution and
+file creation** turned on (Settings > Capabilities on individual plans; an
+owner enables it for Team and Enterprise). Re-upload the zip after you update
+PAEM - Claude keeps the copy you uploaded, not this repo.
+
+Chat skills run in Claude's code-execution sandbox, which belongs to one
+conversation. `.paem/` written there does not reach your repository or the
+next chat, so before you stop, ask Claude for `.paem/` as a download (or at
+least `resume_prompt.md`) and upload it at the start of the next chat. For
+work in a real repository, use Claude Code, where `.paem/` lives in the
+project itself.
+
+Without skills enabled, attach `SKILL.md` and `paem.md` at the start of the
+chat instead, and paste `.paem/resume_prompt.md` when resuming.
 
 ---
 

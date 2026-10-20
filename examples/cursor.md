@@ -6,16 +6,24 @@ Cursor chats are excellent for multi-file work and also excellent at filling the
 
 ## Install
 
-### Project skill (recommended)
+### Skill install (recommended)
 
 ```bash
+# project-scoped (this repo only)
 python scripts/install.py --provider cursor --scope project --target /path/to/your/app
+
+# personal (every project on this machine)
+python scripts/install.py --provider cursor --scope global
 ```
 
-That's `<your-repo>/.cursor/skills/paem/` if you'd rather copy it by hand.
-Cursor doesn't have a personal/global skills directory the way Claude Code
-and Codex CLI do - skills are project-scoped only, so this needs to run once
-per repo.
+That's `<your-repo>/.cursor/skills/paem/` or `~/.cursor/skills/paem/` if you'd
+rather copy it by hand. Cursor also reads the shared `.agents/skills/` and
+`~/.agents/skills/` directories, and `.claude/skills/` / `.codex/skills/` for
+compatibility - so if PAEM is already installed for Claude Code or Codex,
+Cursor picks it up without a second copy (install twice and it may list PAEM
+twice). Only `~/.cursor/skills/` syncs to Cursor's Cloud Agents.
+
+Documented by Cursor; not yet confirmed against a live Cursor install here.
 
 ### Rules fallback
 
@@ -46,7 +54,7 @@ Continue from the latest checkpoint. Verify first.
 ```
 
 Or attach `.paem/project_summary.md` and the checkpoint that `python
-<skill>/scripts/paem_checkpoint.py check --target .` reports as current.
+<skill-dir>/scripts/paem_checkpoint.py check --target .` reports as current.
 
 ---
 

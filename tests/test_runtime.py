@@ -7,9 +7,11 @@ import sys
 import tempfile
 import time
 import unittest
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+from install import PATHS
 from paem_init import build_baseline_checkpoint
 
 
@@ -95,6 +97,44 @@ class InstallerTests(RuntimeCase):
             if (dest / "notes.txt").exists():
                 self.assertEqual((dest / "notes.txt").read_text(), "private note")
             (dest / "notes.txt").write_text("private note")
+
+    def test_every_provider_installs_at_both_scopes(self):
+        home = Path(self.temp.name) / "home"
+        home.mkdir()
+        env = {**os.environ, "HOME": str(home), "USERPROFILE": str(home)}
+        for provider, scopes in PATHS.items():
+            for scope, relative in scopes.items():
+                with self.subTest(provider=provider, scope=scope):
+                    target = Path(self.temp.name) / f"{provider}-{scope}"
+                    target.mkdir()
+                    result = self.script("install.py", "--provider", provider, "--scope", scope,
+                                         "--target", target, env=env)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    base = home if scope == "global" else target
+                    self.assertTrue((base / relative / "SKILL.md").is_file(), relative)
+                    self.assertTrue((base / relative / "scripts/paem_checkpoint.py").is_file(), relative)
+
+    def test_zip_package_has_skill_folder_and_never_overwrites(self):
+        archive = Path(self.temp.name) / "dist" / "paem.zip"
+        result = self.script("install.py", "--zip", archive)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with zipfile.ZipFile(archive) as bundle:
+            names = set(bundle.namelist())
+        for item in ["paem/SKILL.md", "paem/LICENSE", "paem/scripts/paem_checkpoint.py",
+                     "paem/templates/checkpoint.json"]:
+            self.assertIn(item, names)
+        self.assertTrue(all(name.startswith("paem/") for name in names))
+        before = archive.read_bytes()
+        result = self.script("install.py", "--zip", archive)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(archive.read_bytes(), before)
+
+    def test_list_names_every_provider(self):
+        result = self.script("install.py", "--list")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for provider in PATHS:
+            self.assertIn(provider, result.stdout)
+        self.assertIn("GitHub Copilot", result.stdout)
 
 
 class GuardTests(RuntimeCase):

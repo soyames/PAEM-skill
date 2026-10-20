@@ -2,6 +2,8 @@
 
 **Never lose progress again.**
 
+[Website](https://soyames.github.io/PAEM-skill/) · [Install](#install) · [Docs](#documentation)
+
 PAEM is an open-source AI orchestration **skill** (protocol + templates + prompts) that helps long-running software engineering tasks survive interruptions caused by:
 
 - Hourly rate limits
@@ -56,78 +58,84 @@ Automation platforms exist, but not everyone can set them up or operate them. PA
 
 ---
 
-## Compatible AI tools
+## Install
 
-PAEM is designed to work with any AI that can **read/write project files** and follow multi-step instructions. Install notes live under [`examples/`](examples/):
+PAEM follows the open [Agent Skills](https://agentskills.io) format - a folder
+with a `SKILL.md` - so it installs like any other skill. Most coding agents
+now also read the shared `.agents/skills/` folder, so one install usually
+covers every tool you use.
 
-| Tool | Guide |
-|------|--------|
-| Claude (Claude Code, claude.ai) | [examples/claude.md](examples/claude.md) |
-| Codex / ChatGPT | [examples/codex.md](examples/codex.md) |
-| Gemini | [examples/gemini.md](examples/gemini.md) |
-| Cursor | [examples/cursor.md](examples/cursor.md) |
-| Antigravity | [examples/antigravity.md](examples/antigravity.md) - documented auto-discovery unconfirmed, see note below |
-| OpenHands | [examples/openhands.md](examples/openhands.md) |
-| Aider | [examples/aider.md](examples/aider.md) - conventions file, not a skills directory |
-| Continue | [examples/continue.md](examples/continue.md) - rules file, not a skills directory |
-| Grok and other capable LLMs | Load `SKILL.md` / `paem.md` the same way |
-
-Compatibility is **protocol-level** (files + instructions), not a certified integration with every vendor product.
-
-Claude Code, Cursor, Codex CLI, Gemini CLI, and Antigravity all document the
-same open skill-packaging format ([agentskills.io](https://agentskills.io))
-- a folder with `SKILL.md` in it, auto-discovered from a tool-specific
-directory. `scripts/install.py` copies this repo's runtime files to the
-right directory for whichever of those five you name:
+**One command, many agents** - the open [`skills`](https://github.com/vercel-labs/skills)
+CLI asks which agents to install for:
 
 ```bash
-python scripts/install.py --list                                            # see every provider's path
-python scripts/install.py --provider codex --scope project --target ~/code/my-app
+npx skills add soyames/PAEM-skill
 ```
 
-**Confirmed working: Claude Code only, so far.** Antigravity's auto-discovery
-failed in a controlled real-install test - same directory convention, same
-frontmatter shape that Claude Code loads correctly, didn't show up in
-Antigravity's skill list, and neither did an unrelated, established
-third-party skill package tested the same way. Codex CLI, Gemini CLI, and
-Cursor are untested either way (install succeeds; discovery unconfirmed).
-See the SKILL DISCOVERY table in `paem.md` for the current state and
-`examples/antigravity.md` for a manual-context fallback.
+**Gemini CLI's own installer:**
 
-Aider and Continue don't have that directory-scan mechanism - they use an
-explicitly-loaded conventions/rules file instead, so their install steps
-live only in [examples/aider.md](examples/aider.md) and
-[examples/continue.md](examples/continue.md), not in `install.py`.
+```bash
+gemini skills install https://github.com/soyames/PAEM-skill
+```
+
+Both copy the whole repository. For only the runtime files, and to choose the
+directory yourself, use the bundled installer (Python 3.11+, no network):
+
+```bash
+git clone https://github.com/soyames/PAEM-skill.git
+python PAEM-skill/scripts/install.py --provider agents --scope global       # shared ~/.agents/skills/
+python PAEM-skill/scripts/install.py --provider claude-code --scope global  # Claude Code reads only ~/.claude/skills/
+python PAEM-skill/scripts/install.py --list                                 # every provider and path
+```
+
+Swap `--scope global` for `--scope project --target /path/to/your/app` to keep
+PAEM inside one repository. The installer refuses to overwrite a `paem/`
+folder it did not write, and records a hash per file so a re-install can tell
+your edits from its own.
+
+For Claude.ai and Claude Desktop chats, build an upload package with
+`python PAEM-skill/scripts/install.py --zip dist/paem.zip` - see
+[examples/claude.md](examples/claude.md).
+
+### Where it works
+
+"Tested" means a real install was checked in that tool, not just that files
+landed where its docs say. The SKILL DISCOVERY table in [`paem.md`](paem.md)
+has versions and details.
+
+| Tool | Install | Status | Guide |
+|------|---------|--------|-------|
+| Claude Code | `--provider claude-code` | Tested | [claude.md](examples/claude.md) |
+| Claude.ai / Claude Desktop chat | `--zip`, then upload | Tested (uploaded skill) | [claude.md](examples/claude.md) |
+| Codex CLI | `--provider agents` or `codex` | Tested, v0.162.1 | [codex.md](examples/codex.md) |
+| Gemini CLI | `--provider agents` or `gemini-cli` | Tested, v0.64.0 | [gemini.md](examples/gemini.md) |
+| Cursor | `--provider agents` or `cursor` | Documented | [cursor.md](examples/cursor.md) |
+| GitHub Copilot, OpenCode, Devin Desktop, goose | `--provider agents` | Documented | [more-agents.md](examples/more-agents.md) |
+| Kiro | `--provider kiro` | Documented | [more-agents.md](examples/more-agents.md) |
+| OpenHands | `--provider agents` | Documented | [openhands.md](examples/openhands.md) |
+| Antigravity | `--provider antigravity` | Failed an earlier real-install test | [antigravity.md](examples/antigravity.md) |
+| Aider, Continue | Conventions / rules file | Manual | [aider.md](examples/aider.md), [continue.md](examples/continue.md) |
+| Any other file-capable agent | Load `SKILL.md` and `paem.md` | Manual | - |
+
+`npx skills add` was tested too: it installs PAEM, and Codex CLI discovers the
+result. Compatibility is **protocol-level** (files + instructions), not a
+certified integration with every vendor product.
 
 ---
 
 ## Quick Start
 
-### 1. Clone this skill
+### 1. Install
 
-```bash
-git clone https://github.com/soyames/PAEM-skill.git
-```
+Pick a command from [Install](#install). `<skill-dir>` below is wherever your
+tool loads PAEM from, such as `~/.agents/skills/paem` or `.claude/skills/paem`.
 
-Or copy the package into your tool's skills directory (see [`examples/`](examples/)).
-
-### 2. Install for your AI tool
-
-Point your agent at this repo's `SKILL.md` (preferred) or `paem.md`, using the guide for your tool. On Claude Code, Codex CLI, Gemini CLI, Cursor or Antigravity, `scripts/install.py` copies the runtime into the right skills directory:
-
-```bash
-python scripts/install.py --list
-python scripts/install.py --provider claude-code --scope project --target /path/to/your/app
-```
-
-The installer refuses to overwrite a `paem/` folder it did not write, and records a hash per file so a re-install can tell your edits from its own.
-
-### 3. Initialize state and start a long-running project
+### 2. Initialize state and start a long-running project
 
 From **your application repo** (not only inside this skill repo):
 
 ```bash
-python <skill>/scripts/paem_init.py --target .
+python <skill-dir>/scripts/paem_init.py --target .
 ```
 
 Then, in a new chat:
@@ -146,38 +154,38 @@ A PAEM-following agent should:
 
 Python is optional. Without it the protocol is unchanged - the agent writes the checkpoint files by hand and says so. With it, checkpoints are published as one consistent generation instead of four files that have to be kept in sync.
 
-### 4. Checkpoint and resume
+### 3. Checkpoint and resume
 
 Publish (the agent does this; shown here so you can see what it runs):
 
 ```bash
-python <skill>/scripts/paem_checkpoint.py save --target . \
+python <skill-dir>/scripts/paem_checkpoint.py save --target . \
     --input record.json --expected-id checkpoint-014
 ```
 
 Before trusting saved state - in a new session, or after a crash:
 
 ```bash
-python <skill>/scripts/paem_checkpoint.py check --target .     # current / stale / inconsistent / invalid / legacy
-python <skill>/scripts/paem_checkpoint.py resume --target .    # prints the resume text
+python <skill-dir>/scripts/paem_checkpoint.py check --target .     # current / stale / inconsistent / invalid / legacy
+python <skill-dir>/scripts/paem_checkpoint.py resume --target .    # prints the resume text
 ```
 
 When interrupted, open a **new** session and paste:
 
 ```text
 Resume this project with PAEM.
-Run scripts/paem_checkpoint.py check --target . first, then read .paem/ and
-continue from the checkpoint it reports as current.
+Run python <skill-dir>/scripts/paem_checkpoint.py check --target . first, then
+read .paem/ and continue from the checkpoint it reports as current.
 ```
 
 Or paste the contents of `.paem/resume_prompt.md`.
 
-### 5. Validate this package (maintainers / contributors)
+### 4. Validate this package (maintainers / contributors)
 
 From the skill repo root:
 
 ```bash
-python scripts/validate_skill.py                    # layout, frontmatter, schema, templates
+python scripts/validate_skill.py                    # layout, Agent Skills spec, schema, templates
 python -m unittest discover -s tests -v             # installer, initializer, writer, hook adapters
 ```
 

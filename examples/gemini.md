@@ -7,7 +7,15 @@ Gemini (app, API, or IDE integrations) can run long coding tasks but still hits 
 ## Install
 
 Gemini CLI has a real skills system - drop the package where it scans and it's
-discovered automatically, no prompting required:
+discovered automatically, no prompting required. Its own installer works
+straight from this repo:
+
+```bash
+gemini skills install https://github.com/soyames/PAEM-skill
+```
+
+That copies the whole repository (including `.git/` and `tests/`). For just
+the runtime files, use the bundled installer:
 
 ```bash
 # project-scoped (this repo only)
@@ -18,8 +26,15 @@ python scripts/install.py --provider gemini-cli --scope global
 ```
 
 That's `.gemini/skills/paem/` (project) or `~/.gemini/skills/paem/` (global) if
-you'd rather copy it by hand - see `SKILL.md`'s frontmatter for how discovery
-works. If you're on the Gemini app or API instead of the CLI, there's no
+you'd rather copy it by hand. Gemini CLI also reads the shared `.agents/skills/`
+and `~/.agents/skills/` directories, so a `--provider agents` install works too.
+
+Confirmed on Gemini CLI 0.64.0: `gemini skills list` shows `paem [Enabled]`
+from both user-level directories. Project-level skills load only in a folder
+Gemini trusts; in an untrusted folder they are skipped without an error, so
+trust the folder if PAEM doesn't appear.
+
+If you're on the Gemini app or API instead of the CLI, there's no
 skills directory to target; fall back to pasting `paem.md` / `SKILL.md` into
 a saved system instruction or "Gem":
 

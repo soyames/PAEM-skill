@@ -6,21 +6,26 @@ OpenHands (and similar coding agents) already automate tools. PAEM adds a **port
 
 ## Install
 
-1. Place PAEM in the workspace or mount it read-only:
+OpenHands discovers Agent Skills from `.agents/skills/` in the project and
+`~/.agents/skills/` for the user (the older `.openhands/skills/` and
+`.openhands/microagents/` folders still work). Use the shared install:
 
-```text
-/skills/paem/SKILL.md
-/skills/paem/paem.md
+```bash
+python scripts/install.py --provider agents --scope project --target /path/to/your/app
 ```
 
-2. In the agent instructions / initial prompt, require PAEM for long tasks:
+If the agent runs in a container, make sure the project volume - where both
+`.agents/skills/paem/` and `.paem/` live - survives restarts.
+
+Without the installer, mount the package read-only and point at it from the
+initial prompt instead:
 
 ```text
 For long-running engineering goals, follow /skills/paem/paem.md.
 All durable state goes under .paem/ in the project root.
 ```
 
-3. Optionally add a microagent or repo instruction file that points at PAEM.
+Documented by OpenHands; not yet confirmed against a live install here.
 
 ---
 

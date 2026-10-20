@@ -9,7 +9,8 @@ Use when starting a **new** session on an existing PAEM-managed project.
 You are resuming work under the Persistent AI Execution Manager (PAEM) protocol.
 
 1. Select the saved state deliberately. If `scripts/paem_checkpoint.py` is
-   installed, run `python scripts/paem_checkpoint.py check --target .` and read
+   installed, run `python <skill-dir>/scripts/paem_checkpoint.py check --target .` from the
+   project root (`<skill-dir>` is the folder holding PAEM's SKILL.md) and read
    its status before loading anything:
    - `current` - archive, pointer and resume text agree and the repository still
      matches; load it.

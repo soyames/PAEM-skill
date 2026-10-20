@@ -148,6 +148,56 @@ def check_no_em_dashes_in_core() -> None:
             error(f"Em dash found in {rel} (use plain hyphen '-')")
 
 
+SPEC_KEYS = {"name", "description", "license", "compatibility", "metadata", "allowed-tools"}
+
+
+def parse_frontmatter(fm: str) -> dict[str, str]:
+    """Read top-level keys, folding `>` and `|` block scalars and nested maps into strings."""
+    fields: dict[str, str] = {}
+    key = None
+    style = ""
+    lines: list[str] = []
+
+    def flush() -> None:
+        if key is not None:
+            joined = "\n".join(lines) if style == "|" else " ".join(lines)
+            fields[key] = joined.strip()
+
+    for raw in fm.splitlines():
+        top = re.match(r"^([A-Za-z0-9_-]+):\s*(.*)$", raw)
+        if top:
+            flush()
+            key, value = top.group(1), top.group(2).strip()
+            style = value[:1] if value[:1] in (">", "|") else ""
+            lines = [] if style or not value else [value.strip("'\"")]
+        elif key is not None and raw.strip():
+            lines.append(raw.strip())
+    flush()
+    return fields
+
+
+def check_agent_skills_spec(fields: dict[str, str]) -> None:
+    """Enforce the agentskills.io constraints every compliant host relies on."""
+    unknown = sorted(set(fields) - SPEC_KEYS)
+    if unknown:
+        error(f"SKILL.md frontmatter has keys outside the Agent Skills spec: {', '.join(unknown)}")
+    name = fields.get("name", "")
+    if not (1 <= len(name) <= 64 and re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name)):
+        error("SKILL.md name must be 1-64 lowercase letters, digits and single hyphens")
+    description = fields.get("description", "")
+    if not 1 <= len(description) <= 1024:
+        error(f"SKILL.md description must be 1-1024 characters (found {len(description)})")
+    if "compatibility" in fields and not 1 <= len(fields["compatibility"]) <= 500:
+        error("SKILL.md compatibility must be 1-500 characters")
+    # Hosts expect the folder name to equal `name`; every install target must end in it.
+    from install import PATHS  # noqa: E402
+
+    for provider, scopes in PATHS.items():
+        for scope, rel in scopes.items():
+            if rel and Path(rel).name != name:
+                error(f"install.py {provider} {scope} path {rel} does not end in the skill name {name!r}")
+
+
 def check_skill_md() -> None:
     path = require_file("SKILL.md")
     if not path:
@@ -165,7 +215,10 @@ def check_skill_md() -> None:
         error("SKILL.md frontmatter must include name: paem")
     if not re.search(r"(?m)^description:\s*", fm):
         error("SKILL.md frontmatter must include description:")
+    check_agent_skills_spec(parse_frontmatter(fm))
     body = parts[2]
+    if len(body.splitlines()) > 500:
+        warn("SKILL.md body is over 500 lines; the Agent Skills spec recommends moving detail into referenced files")
     for needle in (".paem/", "checkpoint", "resume", "Verify"):
         if needle.lower() not in body.lower():
             error(f"SKILL.md body missing expected concept: {needle}")

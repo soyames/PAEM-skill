@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# PAEM Interactive Installer
+# PAEM installer - forwards its arguments to scripts/install.py (try --list).
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-exec python3 "$SCRIPT_DIR/scripts/install.py" "$@"
+PYTHON="$(command -v python3 || command -v python)" || { echo "PAEM's installer needs Python 3.11+" >&2; exit 1; }
+exec "$PYTHON" "$SCRIPT_DIR/scripts/install.py" "$@"

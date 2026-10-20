@@ -11,6 +11,7 @@ description: >
   Triggers: /paem, "use PAEM", "checkpoint this", "resume from checkpoint",
   "continue long project", "recover from rate limit", "persistent execution",
   multi-session engineering, survive quota, don't lose progress.
+license: MIT
 ---
 
 # Persistent AI Execution Manager (PAEM)
@@ -58,6 +59,15 @@ available, publish through it rather than hand-editing them separately.
 
 Use templates from this skill's `templates/` when creating files. Prefer updating existing files over inventing parallel formats.
 
+## Bundled scripts
+
+Commands below write `<skill-dir>` for the folder that contains this SKILL.md -
+wherever your tool loaded it from, such as `.claude/skills/paem` or
+`~/.agents/skills/paem`. Run them from the project root so `--target .` means
+the project, not the skill. Use `python3` where `python` is not on PATH. The
+scripts need Python 3.11+ and are optional: each step below says what to do by
+hand without them.
+
 ## Session workflow
 
 ### Phase 1 - Load project state
@@ -73,14 +83,15 @@ Read (if present):
 - `.paem/conventions.md`
 - repository status (`git status`, recent commits when available)
 - `A-G-E-N-T-S.md` (remove the dashes) at the project root, if present - treat it as the repo's
-  how-to-behave conventions, and add a one-line pointer to `.paem/` (from
-  `templates/project_agent_snippet.md`) if it doesn't already have one
+  how-to-behave conventions. If it has no pointer to `.paem/`, offer to add the
+  one-line block from `templates/project_agent_snippet.md`; it is a shared file
+  every agent reads, so ask the user before editing it
 - `.paem/provider_budgets.md`, if present - user-defined soft time
   thresholds for proactive checkpointing (no provider exposes real quota
   remaining, so this is a heuristic, not a guarantee)
 
 If `scripts/paem_checkpoint.py` is installed, check the saved state before
-trusting it (`python scripts/paem_checkpoint.py check --target .`). Its status
+trusting it (`python <skill-dir>/scripts/paem_checkpoint.py check --target .`). Its status
 tells you whether the pointer, the resume text and the repository still agree;
 see Phase 7 for what each status means.
 
@@ -125,7 +136,7 @@ of one generation; hand-writing them is what lets an interrupted save leave
 them disagreeing. Write the record body to a file, then:
 
 ```bash
-python scripts/paem_checkpoint.py save --target . --input record.json --expected-id checkpoint-014
+python <skill-dir>/scripts/paem_checkpoint.py save --target . --input record.json --expected-id checkpoint-014
 ```
 
 `--expected-id` is the checkpoint you last read. If another session published
@@ -167,7 +178,7 @@ Before a likely stop (or immediately when limits hit):
 On resume:
 
 1. Check the saved state before trusting it:
-   `python scripts/paem_checkpoint.py check --target .`
+   `python <skill-dir>/scripts/paem_checkpoint.py check --target .`
    - `current` - archive, pointer and resume text agree, and the repository
      still matches. Load it.
    - `stale` - the record is valid but HEAD, the index or working files moved

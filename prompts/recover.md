@@ -15,7 +15,8 @@ Priority order:
 ### Must write
 
 - Fresh checkpoint (even if partial). Publish it when Python is available -
-  `python scripts/paem_checkpoint.py save --target . --input record.json --expected-id <last id>`
+  `python <skill-dir>/scripts/paem_checkpoint.py save --target . --input record.json --expected-id <last id>`
+  (run from the project root; `<skill-dir>` is the folder holding PAEM's SKILL.md)
   - so the archive, pointer and resume text cannot drift apart mid-interruption.
   If another session published first the save is refused; reload and retry
   rather than overwriting it.

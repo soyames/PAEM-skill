@@ -6,9 +6,10 @@ Codex and ChatGPT coding sessions end often (limits, context, product UI). PAEM 
 
 ## Install
 
-Codex CLI has a real skills system (`~/.codex/skills/<name>/` for global,
-`.agents/skills/<name>/` for project) - this is a package, not a paste-in
-prompt:
+Codex CLI has a real skills system: it scans `.agents/skills/<name>/` in every
+directory from where you start it up to the repo root, plus
+`~/.agents/skills/<name>/` for your own skills. This is a package, not a
+paste-in prompt:
 
 ```bash
 # project-scoped (this repo only)
@@ -18,9 +19,18 @@ python scripts/install.py --provider codex --scope project --target /path/to/you
 python scripts/install.py --provider codex --scope global
 ```
 
-`.agents/skills/` is the shared open-standard directory - Antigravity reads
-the exact same path at project scope, so this one install also covers that
-tool for the same project.
+Confirmed on Codex CLI 0.162.1: `codex debug prompt-input` lists `paem` in the
+skills block the model sees.
+
+`.agents/skills/` is the shared open-standard directory - Gemini CLI, Cursor,
+GitHub Copilot, OpenCode, Antigravity (project scope) and others read the
+same path, so this one install covers them too. `--provider agents` is the
+same install under a tool-neutral name.
+
+Upgrading from an earlier PAEM: global installs used to go to
+`~/.codex/skills/paem/` (or `$CODEX_HOME/skills/paem/`). Codex still reads that
+folder, so delete the old copy once the new one is in place, or PAEM shows up
+twice.
 
 If you're on a ChatGPT surface without a skills directory (not the Codex
 CLI), fall back to custom instructions:
@@ -49,7 +59,7 @@ New thread:
 
 ```text
 Resume PAEM project.
-Run: python <skill>/scripts/paem_checkpoint.py check --target .
+Run: python <skill-dir>/scripts/paem_checkpoint.py check --target .
 Read .paem/project_summary.md and the checkpoint it reports as current.
 Verify git status and completed tasks against the code.
 Continue Next Action only. Do not restart finished work.

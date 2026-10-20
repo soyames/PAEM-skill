@@ -4,36 +4,33 @@
 By 2026 every major agentic coding tool converged on the same open packaging
 format for this - a folder with a SKILL.md file plus optional scripts/
 references/assets (see https://agentskills.io). They differ only in which
-directory they scan for it. This script copies this repo's runtime files
-(SKILL.md, paem.md, prompts/, templates/, the checkpoint-guard scripts) into
-the correct directory for whichever tool you name, at project or global
-scope - nothing more, no tool-specific magic, because none is needed.
+directory they scan for it, and most of them now also scan the shared
+`.agents/skills/` directory. This script copies this repo's runtime files
+(SKILL.md, paem.md, prompts/, templates/, the checkpoint scripts) into the
+correct directory for whichever tool you name, at project or global scope -
+nothing more, no tool-specific magic, because none is needed.
 
 Usage:
     python scripts/install.py --list
-    python scripts/install.py --provider claude-code --scope project --target /path/to/your/app
-    python scripts/install.py --provider codex --scope global
-    python scripts/install.py --provider antigravity --scope project --target . --dry-run
+    python scripts/install.py --provider agents --scope project --target /path/to/your/app
+    python scripts/install.py --provider claude-code --scope global
+    python scripts/install.py --provider kiro --scope project --target . --dry-run
+    python scripts/install.py --zip dist/paem.zip     # upload package for Claude.ai / Claude Desktop
+
+`--provider agents` writes to the shared `.agents/skills/paem/` directory
+(`~/.agents/skills/paem/` at global scope). Codex CLI, Gemini CLI, Cursor,
+GitHub Copilot, OpenCode, Devin Desktop (formerly Windsurf), OpenHands and
+goose read it at both scopes, and Antigravity reads it at workspace scope -
+so one install covers all of them. Claude Code and Kiro only read their own
+directories; install for them separately.
 
 Directories below match each provider's own current public docs. That is
-NOT the same as confirmed working - see docs/schema-migration.md's sibling,
-the SKILL DISCOVERY table in paem.md, for what has and hasn't been verified
-against a real install. Short version: Claude Code is confirmed. Antigravity
-is documented but failed in a controlled real-install test (files land in
-the right place; the skill just doesn't show up) - see examples/antigravity.md
-for a manual fallback. Codex, Gemini CLI, and Cursor are untested either way.
-
-  claude-code   project: <target>/.claude/skills/paem/    global: ~/.claude/skills/paem/
-  codex         project: <target>/.agents/skills/paem/    global: ~/.codex/skills/paem/
-  gemini-cli    project: <target>/.gemini/skills/paem/    global: ~/.gemini/skills/paem/
-  antigravity   project: <target>/.agents/skills/paem/    global: ~/.gemini/config/skills/paem/
-  cursor        project: <target>/.cursor/skills/paem/    global: not supported by Cursor (project-only)
-
-Note: codex and antigravity share the same project-level path (.agents/skills/)
-- that's the shared open-standard convention, not a coincidence - so one
-project-scope install with either --provider codex or --provider antigravity
-covers both tools for that project (assuming the target host actually scans
-that path - see above).
+NOT the same as confirmed working - see the SKILL DISCOVERY table in paem.md
+for what has and hasn't been verified against a real install. Short version:
+Claude Code, Codex CLI and Gemini CLI are confirmed. Antigravity is
+documented but failed in an earlier controlled real-install test - see
+examples/antigravity.md for a manual fallback. The rest are documented by
+their vendors but not yet tested here.
 
 This only copies files. It never touches your global git/tool config and
 never overwrites files outside the destination skill folder.
@@ -47,6 +44,7 @@ import json
 import os
 import shutil
 import sys
+import zipfile
 from pathlib import Path
 
 from paem_fs import atomic_write, safe_path
@@ -73,36 +71,64 @@ MANIFEST = ".paem-install.json"
 
 # rel path is relative to: project target dir (for "project") or home dir (for "global")
 PATHS: dict[str, dict[str, str | None]] = {
+    "agents": {"project": ".agents/skills/paem", "global": ".agents/skills/paem"},
     "claude-code": {"project": ".claude/skills/paem", "global": ".claude/skills/paem"},
-    "codex": {"project": ".agents/skills/paem", "global": ".codex/skills/paem"},
+    "codex": {"project": ".agents/skills/paem", "global": ".agents/skills/paem"},
     "gemini-cli": {"project": ".gemini/skills/paem", "global": ".gemini/skills/paem"},
+    "cursor": {"project": ".cursor/skills/paem", "global": ".cursor/skills/paem"},
+    "copilot": {"project": ".github/skills/paem", "global": ".copilot/skills/paem"},
+    "opencode": {"project": ".opencode/skills/paem", "global": ".config/opencode/skills/paem"},
     "antigravity": {"project": ".agents/skills/paem", "global": ".gemini/config/skills/paem"},
-    "cursor": {"project": ".cursor/skills/paem", "global": None},
+    "kiro": {"project": ".kiro/skills/paem", "global": ".kiro/skills/paem"},
+}
+
+# Hosts whose docs say they scan the shared .agents/skills/ directory.
+SHARED_DIR_READERS = {
+    "project": "Codex CLI, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Devin Desktop "
+               "(formerly Windsurf), OpenHands, goose and Antigravity",
+    "global": "Codex CLI, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Devin Desktop "
+              "(formerly Windsurf), OpenHands and goose",
 }
 
 
 def print_table() -> None:
     print(__doc__.split("Usage:")[0].strip())
     print()
-    print(f"{'provider':<14}{'project path':<32}{'global path'}")
+    print(f"{'provider':<14}{'project path':<28}{'global path'}")
     for name, scopes in PATHS.items():
         proj = scopes["project"]
-        glob = scopes["global"] or "(not supported)"
-        print(f"{name:<14}{proj:<32}{glob}")
+        glob = f"~/{scopes['global']}" if scopes["global"] else "(not supported)"
+        print(f"{name:<14}{proj:<28}{glob}")
+    print()
+    print(f"Shared .agents/skills/ is read at project scope by {SHARED_DIR_READERS['project']};")
+    print(f"at global scope by {SHARED_DIR_READERS['global']}.")
 
 
-def copy_runtime_files(dest: Path, dry_run: bool) -> list[str]:
-    dest = Path(os.path.abspath(dest))
-    safe_path(dest, ".")
+def runtime_payload() -> dict[str, bytes]:
     relative_files = list(RUNTIME_TOP_LEVEL_FILES) + [f"scripts/{name}" for name in RUNTIME_SCRIPTS]
     for directory in RUNTIME_DIRS:
         for source in sorted((REPO_ROOT / directory).rglob("*")):
             safe_path(REPO_ROOT, source.relative_to(REPO_ROOT))
             if source.is_file():
                 relative_files.append(source.relative_to(REPO_ROOT).as_posix())
-    payload = {}
-    for relative in relative_files:
-        payload[relative] = safe_path(REPO_ROOT, relative).read_bytes()
+    return {relative: safe_path(REPO_ROOT, relative).read_bytes() for relative in relative_files}
+
+
+def build_zip(archive: Path, dry_run: bool) -> list[str]:
+    """Package the runtime under a top-level paem/ folder, the layout skill uploads expect."""
+    payload = runtime_payload()
+    if not dry_run:
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(archive, "x", zipfile.ZIP_DEFLATED) as bundle:
+            for relative, data in payload.items():
+                bundle.writestr(f"paem/{relative}", data)
+    return [f"paem/{relative}" for relative in payload]
+
+
+def copy_runtime_files(dest: Path, dry_run: bool) -> list[str]:
+    dest = Path(os.path.abspath(dest))
+    safe_path(dest, ".")
+    payload = runtime_payload()
     hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
     marker = safe_path(dest, MANIFEST)
     owned = {}
@@ -143,7 +169,25 @@ def main() -> int:
         "this should be YOUR application project, not this skill repo, unless you're testing.",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print what would be copied without writing anything.")
+    parser.add_argument(
+        "--zip",
+        metavar="PATH",
+        help="Instead of installing, write the runtime files to a new .zip with a top-level paem/ folder - "
+        "the package to upload as a custom skill in Claude.ai or Claude Desktop.",
+    )
     args = parser.parse_args()
+
+    if args.zip:
+        if args.provider:
+            print("error: --zip builds an upload package; it does not take --provider.", file=sys.stderr)
+            return 1
+        archive = Path(args.zip).resolve()
+        if archive.exists():
+            print(f"Refusing to overwrite {archive}; delete it or choose another path.", file=sys.stderr)
+            return 1
+        entries = build_zip(archive, args.dry_run)
+        print(f"{'[dry-run] ' if args.dry_run else ''}Packaged {len(entries)} files into {archive} under paem/.")
+        return 0
 
     if args.list or not args.provider:
         print_table()
@@ -160,10 +204,7 @@ def main() -> int:
         return 1
 
     if args.scope == "global":
-        if args.provider == "codex" and os.environ.get("CODEX_HOME"):
-            dest = Path(os.environ["CODEX_HOME"]).expanduser() / "skills/paem"
-        else:
-            dest = Path.home() / rel
+        dest = Path.home() / rel
     else:
         dest = Path(args.target).resolve() / rel
 
@@ -180,10 +221,9 @@ def main() -> int:
         print("\nDry run - nothing was written. Re-run without --dry-run to install.")
     else:
         print(f"\nFiles installed. Verify PAEM discovery in a new {args.provider} session; installation alone does not prove host support.")
-        if args.provider in ("codex", "antigravity") and args.scope == "project":
-            other = "antigravity" if args.provider == "codex" else "codex"
-            print(f"Note: this same .agents/skills/paem/ path is also where {other} looks - "
-                  f"this install covers both.")
+        if rel.startswith(".agents/"):
+            print(f"Note: .agents/skills/ is the shared directory - at {args.scope} scope it is read by "
+                  f"{SHARED_DIR_READERS[args.scope]}, so this one install covers all of them.")
     return 0
 
 

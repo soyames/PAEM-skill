@@ -19,10 +19,11 @@ Create a durable checkpoint now.
    file and run:
 
    ```bash
-   python scripts/paem_checkpoint.py save --target . --input record.json --expected-id <the id you last read>
+   python <skill-dir>/scripts/paem_checkpoint.py save --target . --input record.json --expected-id <the id you last read>
    ```
 
-   That writes `.paem/checkpoints/checkpoint-NNN.json`, `latest_checkpoint.json`,
+   `<skill-dir>` is the folder holding PAEM's SKILL.md; run it from the project
+   root. That writes `.paem/checkpoints/checkpoint-NNN.json`, `latest_checkpoint.json`,
    `resume_prompt.md` and `current.json` as one generation, and fails if another
    session published first or if the repository moved during the save. Otherwise
    write the archive and `latest_checkpoint.json` yourself, byte-identical, and

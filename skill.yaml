@@ -4,6 +4,7 @@ version: 1.3.0
 author: Yao Amevi Amessinou Sossou
 license: MIT
 homepage: https://github.com/soyames/PAEM-skill
+website: https://soyames.github.io/PAEM-skill/
 description: >
   An AI orchestration skill for long-running software engineering projects that
   must survive interruptions. It publishes validated, repository-bound
@@ -46,6 +47,11 @@ supports:
   - ChatGPT
   - Gemini
   - Cursor
+  - GitHub Copilot
+  - OpenCode
+  - Devin Desktop
+  - goose
+  - Kiro
   - Antigravity
   - OpenHands
   - Aider

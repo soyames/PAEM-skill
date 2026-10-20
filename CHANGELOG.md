@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (cross-agent install)
+
+- `scripts/install.py --provider agents` installs into the shared
+  `.agents/skills/paem/` (project) or `~/.agents/skills/paem/` (global)
+  directory. Codex CLI, Gemini CLI, Cursor, GitHub Copilot, OpenCode, Devin
+  Desktop (formerly Windsurf), OpenHands and goose read it at both scopes, and
+  Antigravity at workspace scope, so one install covers all of them.
+- New installer targets from each vendor's current docs: `copilot`
+  (`.github/skills/`, `~/.copilot/skills/`), `opencode` (`.opencode/skills/`,
+  `~/.config/opencode/skills/`) and `kiro` (`.kiro/skills/`, `~/.kiro/skills/`).
+- `scripts/install.py --zip PATH` builds the upload package for Claude.ai and
+  Claude Desktop (a new zip with a top-level `paem/` folder; never overwrites).
+- `scripts/validate_skill.py` enforces the Agent Skills spec: frontmatter keys,
+  name format, the 1024-character description limit, and that every installer
+  path ends in the skill's name.
+- `examples/more-agents.md` for GitHub Copilot, OpenCode, Devin Desktop, goose
+  and Kiro. Installer tests now cover every provider at both scopes and the zip
+  package.
+- `SKILL.md` declares `license: MIT`.
+
+### Changed (cross-agent install)
+
+- Codex CLI and Gemini CLI skill discovery is confirmed against real installs
+  (Codex CLI 0.162.1, Gemini CLI 0.64.0); the README and the SKILL DISCOVERY
+  table in `paem.md` say so, and list which other hosts are only documented.
+- `--provider codex --scope global` now installs to `~/.agents/skills/paem/`,
+  the user location Codex documents; `CODEX_HOME` no longer changes the
+  destination. Codex still reads the old `~/.codex/skills/paem/`, so remove that
+  copy after upgrading or PAEM appears twice.
+- `--provider cursor --scope global` is supported (`~/.cursor/skills/paem/`);
+  Cursor added personal skills.
+- Script commands in `SKILL.md`, `prompts/` and the README name the skill
+  folder explicitly (`python <skill-dir>/scripts/paem_checkpoint.py ... --target .`)
+  so an agent runs them from the project root instead of guessing which
+  directory `scripts/` and `.` refer to.
+- PAEM now asks before adding its pointer block to the project's agent
+  instructions file, instead of appending it automatically.
+- `install.sh` falls back to `python` when `python3` is missing.
+
 ### Added (v1.3 managed checkpoints)
 
 - `scripts/paem_checkpoint.py`: publishes and inspects consistent checkpoint
