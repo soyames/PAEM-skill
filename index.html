@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PAEM: resume long AI coding tasks in any agent</title>
+  <meta name="description" content="PAEM is an open-source Agent Skill that checkpoints long-running AI coding work into your repository, so Claude Code, Codex, Gemini CLI, Cursor, Copilot and other agents can resume after rate limits, full context windows and crashes.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="canonical" href="https://soyames.github.io/PAEM-skill/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="PAEM: resume long AI coding tasks in any agent">
+  <meta property="og:description" content="Checkpoint long-running AI coding work into your repo. When a session ends, the next one, in any agent, picks up from the last verified state.">
+  <meta property="og:url" content="https://soyames.github.io/PAEM-skill/">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    "name": "PAEM (Persistent AI Execution Manager)",
+    "description": "An open-source Agent Skill that checkpoints long-running AI coding work into the repository so any agent can resume after interruptions.",
+    "codeRepository": "https://github.com/soyames/PAEM-skill",
+    "url": "https://soyames.github.io/PAEM-skill/",
+    "license": "https://opensource.org/licenses/MIT",
+    "programmingLanguage": ["Python", "Markdown"],
+    "author": {"@type": "Person", "name": "Yao Amevi A. Sossou", "url": "https://github.com/soyames"}
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #fbfbf8;
+      --surface: #ffffff;
+      --surface-2: #f2f3ef;
+      --text: #15181d;
+      --muted: #575e6a;
+      --border: #e2e4de;
+      --accent: #0f766e;
+      --accent-hover: #0b5f58;
+      --accent-ink: #ffffff;
+      --accent-soft: #dcf1ed;
+      --ok: #15803d;
+      --ok-soft: #e1f3e6;
+      --warn: #a16207;
+      --warn-soft: #fbf0d6;
+      --bad: #b91c1c;
+      --bad-soft: #fbe3e3;
+      --code-bg: #0f1419;
+      --code-text: #e6edf3;
+      --code-muted: #8b96a3;
+      --code-accent: #5eead4;
+      --code-warn: #fbbf24;
+      --shadow: 0 1px 2px rgba(17, 24, 39, .05), 0 10px 30px rgba(17, 24, 39, .06);
+      --radius: 14px;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0e11;
+        --surface: #12161b;
+        --surface-2: #181d23;
+        --text: #e7eaee;
+        --muted: #9aa3ad;
+        --border: #252c34;
+        --accent: #2dd4bf;
+        --accent-hover: #5eead4;
+        --accent-ink: #042f2b;
+        --accent-soft: #0f2d2a;
+        --ok: #4ade80;
+        --ok-soft: #10261a;
+        --warn: #fbbf24;
+        --warn-soft: #2c2310;
+        --bad: #f87171;
+        --bad-soft: #2d1515;
+        --code-bg: #080b0e;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .35);
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; background: var(--bg); }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 var(--sans);
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:hover { color: var(--accent-hover); }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+    code, pre { font-family: var(--mono); }
+    p code, li code, td code, summary code, dd code {
+      font-size: .9em;
+      padding: .1em .35em;
+      border-radius: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      overflow-wrap: anywhere;
+    }
+    .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+    .skip { position: absolute; left: -999px; top: 8px; background: var(--surface); padding: 8px 12px; z-index: 10; }
+    .skip:focus { left: 8px; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    /* Header */
+    header.site {
+      position: sticky; top: 0; z-index: 5;
+      background: var(--bg);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: saturate(1.4) blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .bar { display: flex; align-items: center; gap: 16px; min-height: 60px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .02em; color: var(--text); text-decoration: none; }
+    .brand svg { width: 26px; height: 26px; color: var(--accent); }
+    nav.primary { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+    nav.primary a { color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 8px; font-size: .95rem; }
+    nav.primary a:hover { color: var(--text); background: var(--surface-2); }
+    nav.primary a.gh { color: var(--text); border: 1px solid var(--border); background: var(--surface); }
+    @media (max-width: 720px) { nav.primary a:not(.gh) { display: none; } }
+
+    /* Hero */
+    .hero { position: relative; padding: clamp(56px, 9vw, 112px) 0 clamp(48px, 7vw, 88px); overflow: hidden; }
+    .hero::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(600px 300px at 80% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+        linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 40px 40px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 85%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 85%);
+    }
+    .hero .wrap { position: relative; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: .85rem; color: var(--muted);
+      border: 1px solid var(--border); background: var(--surface);
+      padding: 4px 12px; border-radius: 999px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+    h1 {
+      font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.05; letter-spacing: -.03em;
+      margin: 20px 0 18px; max-width: 16ch;
+    }
+    h1 .accent { color: var(--accent); }
+    .lede { font-size: clamp(1.05rem, 2vw, 1.25rem); color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 46px; padding: 0 18px; border-radius: 10px; font-weight: 600; text-decoration: none;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    }
+    .btn:hover { color: var(--text); border-color: var(--muted); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-ink); }
+    .proof { margin-top: 22px; color: var(--muted); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+    .proof span::before { content: "✓"; color: var(--ok); font-weight: 700; margin-right: 6px; }
+
+    /* Code / command blocks */
+    .cmd {
+      position: relative; display: flex; align-items: center; gap: 8px;
+      background: var(--code-bg); color: var(--code-text);
+      border-radius: 12px; border: 1px solid color-mix(in srgb, var(--code-bg) 70%, var(--border));
+      padding: 10px 10px 10px 16px; min-width: 0; max-width: 100%;
+    }
+    .cmd pre { margin: 0; overflow-x: auto; flex: 1; min-width: 0; font-size: .92rem; line-height: 1.55; padding: 4px 0; }
+    .cmd pre code { white-space: pre; }
+    .cmd .c { color: var(--code-muted); }
+    .copy {
+      flex: none; align-self: flex-start;
+      font: 600 .8rem var(--sans); color: var(--code-text);
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16);
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; min-height: 32px;
+    }
+    .copy:hover { background: rgba(255,255,255,.16); }
+    .hero .cmd { flex: 1 1 360px; max-width: 520px; }
+
+    /* Sections */
+    section { padding: clamp(56px, 8vw, 96px) 0; }
+    section.alt { background: var(--surface-2); border-block: 1px solid var(--border); }
+    .kicker { color: var(--accent); font-weight: 700; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; }
+    h2 { font-size: clamp(1.7rem, 3.6vw, 2.5rem); line-height: 1.15; letter-spacing: -.02em; margin: 0 0 14px; max-width: 24ch; }
+    .section-lede { color: var(--muted); font-size: 1.08rem; max-width: 64ch; margin: 0 0 36px; }
+    h3 { font-size: 1.12rem; margin: 0 0 8px; letter-spacing: -.01em; }
+
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); min-width: 0; }
+    .card p { margin: 0; color: var(--muted); }
+    .icon {
+      width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+      background: var(--accent-soft); color: var(--accent); margin-bottom: 14px;
+    }
+    .icon svg { width: 20px; height: 20px; }
+
+    /* Pain */
+    blockquote.limit {
+      margin: 0 0 32px; padding: 18px 22px; border-radius: var(--radius);
+      background: var(--bad-soft); color: var(--text); border: 1px solid color-mix(in srgb, var(--bad) 35%, var(--border));
+      font: 600 clamp(1.05rem, 2.4vw, 1.35rem)/1.4 var(--mono);
+      display: flex; gap: 12px; align-items: center;
+    }
+    blockquote.limit::before { content: "!"; flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--bad); color: var(--bg); font-family: var(--sans); }
+
+    /* Timeline diagram */
+    .diagram { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: clamp(18px, 3vw, 28px); box-shadow: var(--shadow); margin-bottom: 40px; }
+    .sessions { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .session { border: 1px dashed var(--border); border-radius: 12px; padding: 14px; background: var(--surface-2); min-width: 0; }
+    .session .tool { font-weight: 700; display: block; }
+    .session .what { color: var(--muted); font-size: .9rem; display: block; margin: 2px 0 10px; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; font: 600 .78rem var(--sans); padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+    .pill.bad { background: var(--bad-soft); color: var(--bad); }
+    .pill.ok { background: var(--ok-soft); color: var(--ok); }
+    .pill.warn { background: var(--warn-soft); color: var(--warn); }
+    .pill.info { background: var(--accent-soft); color: var(--accent); }
+    .pill.muted { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+    .connector { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; height: 26px; }
+    .connector span { justify-self: center; width: 2px; background: repeating-linear-gradient(to bottom, var(--accent) 0 5px, transparent 5px 9px); }
+    .memory {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+      border-radius: 12px; padding: 14px 16px;
+      background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    }
+    .memory strong { font-family: var(--mono); }
+    .memory ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .memory li { font: 600 .8rem var(--mono); padding: 3px 9px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+    .memory li.latest { border-color: var(--accent); color: var(--accent); }
+    @media (max-width: 640px) {
+      .sessions, .connector { grid-template-columns: minmax(0, 1fr); }
+      .connector { height: auto; }
+      .connector span:not(:last-child) { display: none; }
+      .connector span { height: 22px; }
+    }
+
+    /* Steps */
+    .steps { counter-reset: step; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); padding: 0; margin: 0 0 40px; list-style: none; }
+    .steps li { counter-increment: step; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; min-width: 0; }
+    .steps li::before {
+      content: counter(step); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent); color: var(--accent-ink); font-weight: 700; margin-bottom: 12px;
+    }
+    .steps p { margin: 0; color: var(--muted); }
+
+    /* Terminal */
+    .terminal { background: var(--code-bg); color: var(--code-text); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .terminal .chrome { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .terminal .chrome i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.18); }
+    .terminal pre { margin: 0; padding: 16px 18px 20px; overflow-x: auto; font-size: .88rem; line-height: 1.6; }
+    .terminal .p { color: var(--code-accent); }
+    .terminal .c { color: var(--code-muted); }
+    .terminal .s-ok { color: #4ade80; }
+    .terminal .s-warn { color: var(--code-warn); }
+    .split { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; }
+    @media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } }
+    .status-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+    .status-list li { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+    .status-list p { margin: 0; color: var(--muted); }
+
+    /* Tabs */
+    .tabs { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    [role="tablist"] { display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); background: var(--surface-2); scrollbar-width: thin; }
+    [role="tab"] {
+      flex: none; font: 600 .95rem var(--sans); color: var(--muted); background: none; border: 0;
+      border-bottom: 2px solid transparent; padding: 14px 18px; cursor: pointer; min-height: 48px;
+    }
+    [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); background: var(--surface); }
+    @media (max-width: 560px) {
+      [role="tablist"] { flex-wrap: wrap; }
+      [role="tab"] { flex: 1 1 auto; padding: 12px; }
+    }
+    [role="tabpanel"] { padding: clamp(18px, 3vw, 28px); }
+    [role="tabpanel"] > * + * { margin-top: 14px; }
+    [role="tabpanel"] p { margin-bottom: 0; color: var(--muted); max-width: 72ch; }
+    .panel-title { display: none; }
+    html.js .panel-title + * { margin-top: 0; }
+    html:not(.js) [role="tablist"] { display: none; }
+    html:not(.js) .panel-title { display: block; margin: 0; }
+    html:not(.js) [role="tabpanel"] + [role="tabpanel"] { border-top: 1px solid var(--border); }
+    .start { margin-top: 28px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+    table { border-collapse: collapse; width: 100%; min-width: 640px; }
+    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface-2); }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 600; }
+    .note { color: var(--muted); font-size: .92rem; margin: 14px 0 0; max-width: 80ch; }
+
+    /* Limits */
+    .limits { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+    .limits li { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; color: var(--muted); }
+    .limits strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+    /* FAQ */
+    .faq { display: grid; gap: 10px; max-width: 860px; }
+    details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0 18px; }
+    summary { cursor: pointer; font-weight: 600; padding: 16px 0; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--accent); font-size: 1.3rem; line-height: 1; }
+    details[open] summary::after { content: "−"; }
+    details p { margin: 0 0 16px; color: var(--muted); }
+
+    /* CTA + footer */
+    .final { text-align: center; }
+    .final h2 { margin-inline: auto; }
+    .final .section-lede { margin-inline: auto; }
+    .final .cta-row { justify-content: center; }
+    .final .cmd { max-width: 520px; margin: 0 auto 20px; text-align: left; }
+    footer.site { border-top: 1px solid var(--border); padding: 28px 0 40px; color: var(--muted); font-size: .92rem; }
+    footer.site .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+    footer.site nav { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    footer.site a { color: var(--muted); }
+    footer.site a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site">
+    <div class="wrap bar">
+      <a class="brand" href="#top" aria-label="PAEM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="47.1 9.4" transform="rotate(-90 12 12)"/>
+          <circle cx="4.2" cy="7.5" r="2.4" fill="currentColor"/>
+          <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+        </svg>
+        PAEM
+      </a>
+      <nav class="primary" aria-label="Primary">
+        <a href="#how">How it works</a>
+        <a href="#install">Install</a>
+        <a href="#agents">Agents</a>
+        <a href="#faq">FAQ</a>
+        <a class="gh" href="https://github.com/soyames/PAEM-skill">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="hero" id="top">
+      <div class="wrap">
+        <span class="eyebrow"><span class="dot" aria-hidden="true"></span>Open-source Agent Skill · MIT license</span>
+        <h1>AI sessions end. <span class="accent">Your progress doesn't.</span></h1>
+        <p class="lede">
+          PAEM checkpoints long-running coding work into your repository. When a rate limit,
+          a full context window or a crash ends a session, the next one, in any agent,
+          resumes from the last verified state instead of starting over.
+        </p>
+        <div class="cta-row">
+          <div class="cmd">
+            <pre><code id="cmd-hero">npx skills add soyames/PAEM-skill</code></pre>
+            <button class="copy" type="button" data-copy="cmd-hero" aria-label="Copy install command">Copy</button>
+          </div>
+          <a class="btn" href="https://github.com/soyames/PAEM-skill">View on GitHub</a>
+        </div>
+        <p class="proof">
+          <span>Tested in Claude Code, Codex CLI and Gemini CLI</span>
+          <span>One shared folder, read by 9 agents</span>
+          <span>No daemon, account or telemetry</span>
+        </p>
+      </div>
+    </div>
+
+    <section class="alt" aria-labelledby="pain-title">
+      <div class="wrap">
+        <p class="kicker">The problem</p>
+        <h2 id="pain-title">Every long task eventually hits this.</h2>
+        <blockquote class="limit">You've reached your usage limit.</blockquote>
+        <div class="grid">
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 9l6 6M15 9l-6 6"/></svg></div>
+            <h3>The plan lived in the chat</h3>
+            <p>Decisions, trade-offs and the task breakdown disappear with the conversation that held them.</p>
+          </div>
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <h3>Nobody knows where it stopped</h3>
+            <p>Half-applied edits, tests that may or may not pass, work that might already be done.</p>
+          </div>
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div>
+            <h3>The next session starts from zero</h3>
+            <p>Twenty minutes of re-explaining, and a real risk of redoing or undoing finished work.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <p class="kicker">How it works</p>
+        <h2 id="how-title">Sessions are temporary workers. The repo is the memory.</h2>
+        <p class="section-lede">
+          PAEM is a protocol your agent follows, plus optional Python scripts that make it reliable.
+          State lives in plain files under <code>.paem/</code> in your project, so any agent can pick it up.
+        </p>
+
+        <div class="diagram" role="img" aria-label="Three agent sessions in a row: Claude Code stops at a rate limit, Codex CLI stops when its context fills, Gemini CLI continues. All three read and write the same .paem folder, which holds checkpoints 12 to 14.">
+          <div class="sessions">
+            <div class="session"><span class="tool">Claude Code</span><span class="what">Builds the login API</span><span class="pill bad">Rate limit</span></div>
+            <div class="session"><span class="tool">Codex CLI</span><span class="what">Adds the form and tests</span><span class="pill warn">Context full</span></div>
+            <div class="session"><span class="tool">Gemini CLI</span><span class="what">Picks up the next action</span><span class="pill ok">Working</span></div>
+          </div>
+          <div class="connector" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="memory">
+            <strong>.paem/</strong>
+            <span>in your repo</span>
+            <ol>
+              <li>checkpoint-012</li>
+              <li>checkpoint-013</li>
+              <li class="latest">checkpoint-014</li>
+            </ol>
+          </div>
+        </div>
+
+        <ol class="steps">
+          <li><h3>Load</h3><p>A new session reads the project summary, task list and latest checkpoint from <code>.paem/</code>.</p></li>
+          <li><h3>Verify</h3><p>Before trusting anything, it checks the checkpoint still matches the code: HEAD, index and working files.</p></li>
+          <li><h3>Work in small steps</h3><p>One task at a time, with a checkpoint after every milestone, not just before a likely stop.</p></li>
+          <li><h3>Resume anywhere</h3><p>When a session dies, open any agent on the same repo and continue from one clear next action.</p></li>
+        </ol>
+
+        <div class="split">
+          <div>
+            <h3>It knows when a checkpoint has gone stale</h3>
+            <p class="section-lede" style="margin-bottom:20px">
+              Each checkpoint is bound to the Git state it describes. <code>check</code> tells a
+              resuming session whether the record still describes this code, before it acts on it.
+            </p>
+            <ul class="status-list">
+              <li><span class="pill ok">current</span><p>Record, pointer and resume text agree, and the repo still matches.</p></li>
+              <li><span class="pill warn">stale</span><p>Valid record, but the code moved on. Re-verify before continuing.</p></li>
+              <li><span class="pill bad">inconsistent</span><p>Saved files disagree, or a save was interrupted. Stop and report.</p></li>
+              <li><span class="pill muted">invalid / legacy</span><p>Malformed, or written by hand. Never silently trusted as current.</p></li>
+            </ul>
+          </div>
+          <div class="terminal" role="img" aria-label="Terminal: the check command reports current, then after a new commit it reports stale.">
+            <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+<pre><code><span class="p">$</span> python &lt;skill-dir&gt;/scripts/paem_checkpoint.py check --target .
+{ "status": <span class="s-ok">"current"</span>, ... }
+
+<span class="p">$</span> git commit -qam "finish login form"
+<span class="p">$</span> python &lt;skill-dir&gt;/scripts/paem_checkpoint.py check --target .
+{
+  "status": <span class="s-warn">"stale"</span>,
+  "reasons": [
+    "Repository/worktree, HEAD, index or working files
+     differ from the checkpoint"
+  ]
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt" aria-labelledby="features-title">
+      <div class="wrap">
+        <p class="kicker">What you get</p>
+        <h2 id="features-title">Small, boring, and dependable on purpose.</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v3a4 4 0 0 0 4 4h5.5"/></svg></div>
+            <h3>Repository-bound checkpoints</h3>
+            <p>Each record carries a fingerprint of the Git state it was written against.</p>
+          </div>
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h3>Safe with parallel sessions</h3>
+            <p>A save names the checkpoint it expects. If another session published first, it is refused, not overwritten.</p>
+          </div>
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></div>
+            <h3>Plain files, any agent</h3>
+            <p>Markdown and JSON in <code>.paem/</code>: readable, diffable, committable, and not tied to one vendor.</p>
+          </div>
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/><path d="M17 15l2 2 3-4"/></svg></div>
+            <h3>Resume prompts that name the exact save</h3>
+            <p><code>resume_prompt.md</code> is paste-ready for a fresh session and points at one specific checkpoint.</p>
+          </div>
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+            <h3>Optional stop-hook guard</h3>
+            <p>On Claude Code, a fail-open hook stops a turn that would end with stale state. Codex, Gemini CLI and Cursor adapters are best-effort.</p>
+          </div>
+          <div class="card">
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></div>
+            <h3>Nothing to host or trust</h3>
+            <p>No daemon, no account, no telemetry. Without Python, the agent follows the same protocol by hand.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" aria-labelledby="install-title">
+      <div class="wrap">
+        <p class="kicker">Install</p>
+        <h2 id="install-title">One folder with a SKILL.md. Installs like any skill.</h2>
+        <p class="section-lede">
+          PAEM follows the open <a href="https://agentskills.io">Agent Skills</a> format. Most agents now also read
+          the shared <code>.agents/skills/</code> folder, so one install usually covers every tool you use.
+        </p>
+
+        <div class="tabs">
+          <div role="tablist" aria-label="Install methods">
+            <button role="tab" id="tab-any" aria-controls="panel-any" aria-selected="true">Any agent</button>
+            <button role="tab" id="tab-py" aria-controls="panel-py" aria-selected="false" tabindex="-1">Bundled installer</button>
+            <button role="tab" id="tab-gemini" aria-controls="panel-gemini" aria-selected="false" tabindex="-1">Gemini CLI</button>
+            <button role="tab" id="tab-claude" aria-controls="panel-claude" aria-selected="false" tabindex="-1">Claude.ai</button>
+          </div>
+
+          <div role="tabpanel" id="panel-any" aria-labelledby="tab-any">
+            <h3 class="panel-title">Any agent</h3>
+            <div class="cmd">
+              <pre><code id="cmd-any">npx skills add soyames/PAEM-skill</code></pre>
+              <button class="copy" type="button" data-copy="cmd-any" aria-label="Copy command">Copy</button>
+            </div>
+            <p>Uses the open <a href="https://github.com/vercel-labs/skills">skills</a> CLI, which asks which agents to install for. It copies the whole repository.</p>
+          </div>
+
+          <div role="tabpanel" id="panel-py" aria-labelledby="tab-py">
+            <h3 class="panel-title">Bundled installer</h3>
+            <div class="cmd">
+              <pre><code id="cmd-py">git clone https://github.com/soyames/PAEM-skill.git
+python PAEM-skill/scripts/install.py --provider agents --scope global       <span class="c"># Codex, Gemini CLI, Cursor, Copilot, OpenCode…</span>
+python PAEM-skill/scripts/install.py --provider claude-code --scope global  <span class="c"># Claude Code</span>
+python PAEM-skill/scripts/install.py --list                                 <span class="c"># every provider and path</span></code></pre>
+              <button class="copy" type="button" data-copy="cmd-py" aria-label="Copy commands">Copy</button>
+            </div>
+            <p>Python 3.11+, no network. Copies only the runtime files, refuses to overwrite a folder it didn't write, and takes <code>--scope project --target /path/to/app</code> to stay inside one repository.</p>
+          </div>
+
+          <div role="tabpanel" id="panel-gemini" aria-labelledby="tab-gemini">
+            <h3 class="panel-title">Gemini CLI</h3>
+            <div class="cmd">
+              <pre><code id="cmd-gemini">gemini skills install https://github.com/soyames/PAEM-skill</code></pre>
+              <button class="copy" type="button" data-copy="cmd-gemini" aria-label="Copy command">Copy</button>
+            </div>
+            <p>Gemini CLI's own installer. Project-level skills load only in a folder Gemini trusts.</p>
+          </div>
+
+          <div role="tabpanel" id="panel-claude" aria-labelledby="tab-claude">
+            <h3 class="panel-title">Claude.ai and Claude Desktop</h3>
+            <div class="cmd">
+              <pre><code id="cmd-claude">git clone https://github.com/soyames/PAEM-skill.git
+python PAEM-skill/scripts/install.py --zip dist/paem.zip</code></pre>
+              <button class="copy" type="button" data-copy="cmd-claude" aria-label="Copy commands">Copy</button>
+            </div>
+            <p>Then in Claude: <strong>Customize &gt; Skills</strong>, <strong>+</strong>, <strong>Create skill &gt; Upload a skill</strong>, and pick <code>dist/paem.zip</code>. Needs code execution turned on. Chat sandboxes don't persist between conversations, so download <code>.paem/</code> before you leave; for a real repository, use Claude Code.</p>
+          </div>
+        </div>
+
+        <div class="start">
+          <h3>Then start a long task</h3>
+          <div class="cmd">
+            <pre><code id="cmd-start">Use PAEM for this project.
+Goal: implement user authentication with registration, login and password reset.</code></pre>
+            <button class="copy" type="button" data-copy="cmd-start" aria-label="Copy prompt">Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt" id="agents" aria-labelledby="agents-title">
+      <div class="wrap">
+        <p class="kicker">Where it works</p>
+        <h2 id="agents-title">Tested where we could. Labelled where we couldn't.</h2>
+        <p class="section-lede">"Tested" means a real install was checked in that tool, not just that files landed where its docs say.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Agent</th><th scope="col">Where PAEM goes</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Claude Code</td><td><code>.claude/skills/paem/</code></td><td><span class="pill ok">Tested</span></td></tr>
+              <tr><td>Claude.ai / Claude Desktop chat</td><td>Uploaded skill zip</td><td><span class="pill ok">Tested</span></td></tr>
+              <tr><td>Codex CLI</td><td><code>.agents/skills/paem/</code></td><td><span class="pill ok">Tested · 0.162.1</span></td></tr>
+              <tr><td>Gemini CLI</td><td><code>.agents/skills/paem/</code> or <code>.gemini/skills/paem/</code></td><td><span class="pill ok">Tested · 0.64.0</span></td></tr>
+              <tr><td>Cursor</td><td><code>.agents/skills/paem/</code> or <code>.cursor/skills/paem/</code></td><td><span class="pill info">Documented</span></td></tr>
+              <tr><td>GitHub Copilot</td><td><code>.agents/skills/paem/</code> or <code>.github/skills/paem/</code></td><td><span class="pill info">Documented</span></td></tr>
+              <tr><td>OpenCode</td><td><code>.agents/skills/paem/</code> or <code>.opencode/skills/paem/</code></td><td><span class="pill info">Documented</span></td></tr>
+              <tr><td>Devin Desktop (formerly Windsurf), OpenHands, goose</td><td><code>.agents/skills/paem/</code></td><td><span class="pill info">Documented</span></td></tr>
+              <tr><td>Kiro</td><td><code>.kiro/skills/paem/</code></td><td><span class="pill info">Documented</span></td></tr>
+              <tr><td>Antigravity</td><td><code>.agents/skills/paem/</code></td><td><span class="pill warn">Failed an earlier test</span></td></tr>
+              <tr><td>Aider, Continue, any file-capable agent</td><td>Load <code>SKILL.md</code> and <code>paem.md</code></td><td><span class="pill muted">Manual</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Codex CLI was checked with <code>codex debug prompt-input</code>, Gemini CLI with <code>gemini skills list</code>. Per-tool guides and exact versions are in the <a href="https://github.com/soyames/PAEM-skill/tree/main/examples">examples</a> and the discovery table in <a href="https://github.com/soyames/PAEM-skill/blob/main/paem.md">paem.md</a>.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="limits-title">
+      <div class="wrap">
+        <p class="kicker">Honest scope</p>
+        <h2 id="limits-title">What PAEM doesn't do.</h2>
+        <ul class="limits">
+          <li><strong>Recover work that was never checkpointed.</strong>A crash between two checkpoints loses that gap. The stop hook narrows it; nothing closes it.</li>
+          <li><strong>Enforce anything by itself.</strong>Checkpointing is an instruction the agent follows. Hook adapters are best-effort and fail open.</li>
+          <li><strong>Predict rate limits.</strong>No provider exposes remaining quota, so PAEM checkpoints on milestones instead of waiting for a warning.</li>
+          <li><strong>Verify your work.</strong>A checkpoint records what the agent claimed, labelled <code>self_reported</code>. PAEM checks its shape and its binding to the repo.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="alt" id="faq" aria-labelledby="faq-title">
+      <div class="wrap">
+        <p class="kicker">FAQ</p>
+        <h2 id="faq-title">Questions developers ask first.</h2>
+        <div class="faq">
+          <details>
+            <summary>Is PAEM a service, a daemon or an extension?</summary>
+            <p>None of those. It is an Agent Skill: instructions, templates and optional scripts your agent loads. Nothing runs in the background and nothing leaves your machine.</p>
+          </details>
+          <details>
+            <summary>Do I need Python?</summary>
+            <p>No. Python 3.11+ enables the validated checkpoint writer and the staleness check. Without it, the agent writes the same files by hand and says so.</p>
+          </details>
+          <details>
+            <summary>Where does the state live? Should I commit it?</summary>
+            <p>In <code>.paem/</code> at your project root. Commit it if teammates or other machines should resume the same work; ignore it if it's just for you. Never put secrets in it.</p>
+          </details>
+          <details>
+            <summary>How is this different from my agent's memory or context compaction?</summary>
+            <p>Built-in memory belongs to one tool and one account. PAEM's state is plain files in the repository, checked against Git before it's trusted, and readable by whichever agent you open next.</p>
+          </details>
+          <details>
+            <summary>Can I switch agents mid-project?</summary>
+            <p>Yes, that's the point. Stop in one agent with a checkpoint, open another on the same clone, and it resumes from the same <code>.paem/</code>. Only one session should write checkpoints at a time.</p>
+          </details>
+          <details>
+            <summary>Does it work in a plain chat with no file access?</summary>
+            <p>Partly. The protocol needs an agent that can read and write files. In a chat without file access you can still paste the resume prompt, but nothing gets saved for you.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="final" aria-labelledby="final-title">
+      <div class="wrap">
+        <h2 id="final-title">Make the next interruption cost minutes, not hours.</h2>
+        <p class="section-lede">Free and open source under the MIT license. Install it once, and every agent you use shares the same project memory.</p>
+        <div class="cmd">
+          <pre><code id="cmd-final">npx skills add soyames/PAEM-skill</code></pre>
+          <button class="copy" type="button" data-copy="cmd-final" aria-label="Copy install command">Copy</button>
+        </div>
+        <div class="cta-row">
+          <a class="btn primary" href="https://github.com/soyames/PAEM-skill">Star on GitHub</a>
+          <a class="btn" href="https://github.com/soyames/PAEM-skill/blob/main/paem.md">Read the protocol</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <span>PAEM · MIT licensed · Built by <a href="https://github.com/soyames">Yao Amevi A. Sossou</a></span>
+      <nav aria-label="Footer">
+        <a href="https://github.com/soyames/PAEM-skill">GitHub</a>
+        <a href="https://github.com/soyames/PAEM-skill/tree/main/docs">Docs</a>
+        <a href="https://github.com/soyames/PAEM-skill/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/soyames/PAEM-skill/issues">Issues</a>
+      </nav>
+    </div>
+  </footer>
+
+  <p class="visually-hidden" aria-live="polite" id="copy-status"></p>
+
+  <script>
+    document.documentElement.classList.add("js");
+
+    const status = document.getElementById("copy-status");
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const source = document.getElementById(button.dataset.copy);
+        const text = source.textContent.replace(/[ \t]+#[^\n]*/g, "").trim();
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(source);
+          const selection = getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          document.execCommand("copy");
+          selection.removeAllRanges();
+        }
+        button.textContent = "Copied";
+        status.textContent = "Copied to clipboard";
+        setTimeout(() => { button.textContent = "Copy"; status.textContent = ""; }, 1600);
+      });
+    });
+
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    const select = (tab, focus) => {
+      tabs.forEach((other) => {
+        const selected = other === tab;
+        other.setAttribute("aria-selected", String(selected));
+        other.tabIndex = selected ? 0 : -1;
+        document.getElementById(other.getAttribute("aria-controls")).hidden = !selected;
+      });
+      if (focus) tab.focus();
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => select(tab, false));
+      tab.addEventListener("keydown", (event) => {
+        const moves = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 };
+        if (!(event.key in moves)) return;
+        event.preventDefault();
+        select(tabs[(moves[event.key] + tabs.length) % tabs.length], true);
+      });
+    });
+    if (tabs.length) select(tabs[0], false);
+  </script>
+</body>
+</html>
