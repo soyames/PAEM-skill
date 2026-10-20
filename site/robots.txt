@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://soyames.github.io/PAEM-skill/sitemap.xml

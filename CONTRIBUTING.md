@@ -113,6 +113,11 @@ If you change a format:
 
 Fix typos, expand FAQs, add real-world recovery stories (**redact secrets and private code**).
 
+The website (https://soyames.github.io/PAEM-skill/) lives on the `gh-pages`
+branch as plain static files, deliberately kept off `main` so the skill people
+clone or install contains no site files. Send website changes as pull requests
+against `gh-pages`.
+
 ### Bug reports
 
 Use the **Bug report** issue form. Include:
