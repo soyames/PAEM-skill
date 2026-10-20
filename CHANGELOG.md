@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and Kiro. Installer tests now cover every provider at both scopes and the zip
   package.
 - `SKILL.md` declares `license: MIT`.
+- GitHub Pages site under `site/`, deployed by `.github/workflows/pages.yml`.
 
 ### Changed (cross-agent install)
 
