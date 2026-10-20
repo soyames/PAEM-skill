@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (layout: the skill lives in `skills/paem/`)
+
+- Everything that ships - `SKILL.md`, `paem.md`, `skill.yaml`, `prompts/`,
+  `templates/`, `schemas/`, the runtime scripts, `docs/` and `examples/`, plus a
+  copy of `LICENSE` - moved into `skills/paem/`. Installs now carry the skill
+  and nothing else: `npx skills add soyames/PAEM-skill` copies only that folder,
+  `gemini skills install` takes `--path skills/paem`, and `scripts/install.py`
+  and `--zip` copy the folder whole instead of a hand-kept file list.
+- Repository-only files stay outside it: `scripts/install.py`,
+  `scripts/validate_skill.py`, `tests/`, `fixtures/`, CI, and the planning doc,
+  now `ROADMAP.md` at the root. `validate_skill.py` fails if a repository-only
+  file lands inside `skills/paem/` or the two `LICENSE` copies drift apart.
+- **Breaking for clone-in-place installs:** if you cloned this repository
+  straight into a skills directory, the root no longer has a `SKILL.md`.
+  Reinstall with one of the commands in the README.
+
 ### Added (cross-agent install)
 
 - `scripts/install.py --provider agents` installs into the shared

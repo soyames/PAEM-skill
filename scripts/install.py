@@ -5,10 +5,11 @@ By 2026 every major agentic coding tool converged on the same open packaging
 format for this - a folder with a SKILL.md file plus optional scripts/
 references/assets (see https://agentskills.io). They differ only in which
 directory they scan for it, and most of them now also scan the shared
-`.agents/skills/` directory. This script copies this repo's runtime files
-(SKILL.md, paem.md, prompts/, templates/, the checkpoint scripts) into the
-correct directory for whichever tool you name, at project or global scope -
-nothing more, no tool-specific magic, because none is needed.
+`.agents/skills/` directory. This script copies the skill folder,
+`skills/paem/` (SKILL.md, paem.md, prompts/, templates/, schemas/, the
+runtime scripts and their docs), into the correct directory for whichever
+tool you name, at project or global scope - nothing from the rest of the
+repository, and no tool-specific magic, because none is needed.
 
 Usage:
     python scripts/install.py --list
@@ -25,12 +26,12 @@ so one install covers all of them. Claude Code and Kiro only read their own
 directories; install for them separately.
 
 Directories below match each provider's own current public docs. That is
-NOT the same as confirmed working - see the SKILL DISCOVERY table in paem.md
-for what has and hasn't been verified against a real install. Short version:
-Claude Code, Codex CLI and Gemini CLI are confirmed. Antigravity is
-documented but failed in an earlier controlled real-install test - see
-examples/antigravity.md for a manual fallback. The rest are documented by
-their vendors but not yet tested here.
+NOT the same as confirmed working - see the SKILL DISCOVERY table in
+skills/paem/paem.md for what has and hasn't been verified against a real
+install. Short version: Claude Code, Codex CLI and Gemini CLI are confirmed.
+Antigravity is documented but failed in an earlier controlled real-install
+test - see skills/paem/examples/antigravity.md for a manual fallback. The
+rest are documented by their vendors but not yet tested here.
 
 This only copies files. It never touches your global git/tool config and
 never overwrites files outside the destination skill folder.
@@ -47,26 +48,13 @@ import sys
 import zipfile
 from pathlib import Path
 
-from paem_fs import atomic_write, safe_path
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
+# Everything an installed skill needs lives here, and nothing else does.
+SKILL_ROOT = REPO_ROOT / "skills" / "paem"
+sys.path.insert(0, str(SKILL_ROOT / "scripts"))
 
-RUNTIME_TOP_LEVEL_FILES = ["SKILL.md", "paem.md", "skill.yaml", "LICENSE"]
-RUNTIME_DIRS = ["prompts", "templates", "schemas", "docs", "examples"]
-RUNTIME_SCRIPTS = [
-    "paem_guard_core.py",
-    "paem_checkpoint_guard.py",
-    "paem_checkpoint_guard_codex.py",
-    "paem_checkpoint_guard_gemini.py",
-    "paem_checkpoint_guard_cursor.py",
-    "paem_init.py",
-    "validate_checkpoint.py",
-    "paem_schema_lib.py",
-    "paem_fs.py",
-    "paem_repository.py",
-    "paem_checkpoint.py",
-    "paem_hook_debug.py",
-]
+from paem_fs import atomic_write, safe_path  # noqa: E402
+
 MANIFEST = ".paem-install.json"
 
 # rel path is relative to: project target dir (for "project") or home dir (for "global")
@@ -105,13 +93,17 @@ def print_table() -> None:
 
 
 def runtime_payload() -> dict[str, bytes]:
-    relative_files = list(RUNTIME_TOP_LEVEL_FILES) + [f"scripts/{name}" for name in RUNTIME_SCRIPTS]
-    for directory in RUNTIME_DIRS:
-        for source in sorted((REPO_ROOT / directory).rglob("*")):
-            safe_path(REPO_ROOT, source.relative_to(REPO_ROOT))
-            if source.is_file():
-                relative_files.append(source.relative_to(REPO_ROOT).as_posix())
-    return {relative: safe_path(REPO_ROOT, relative).read_bytes() for relative in relative_files}
+    """Every file in the skill folder, minus bytecode caches and dot-paths a local run may leave."""
+    payload = {}
+    for source in sorted(SKILL_ROOT.rglob("*")):
+        relative = source.relative_to(SKILL_ROOT)
+        contained = safe_path(SKILL_ROOT, relative)
+        if not source.is_file() or source.suffix == ".pyc":
+            continue
+        if any(part == "__pycache__" or part.startswith(".") for part in relative.parts):
+            continue
+        payload[relative.as_posix()] = contained.read_bytes()
+    return payload
 
 
 def build_zip(archive: Path, dry_run: bool) -> list[str]:

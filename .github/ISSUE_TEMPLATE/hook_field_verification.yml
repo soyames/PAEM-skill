@@ -6,10 +6,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        `scripts/paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py`
+        `skills/paem/scripts/paem_checkpoint_guard_codex.py`, `_gemini.py`, and `_cursor.py`
         were written from each host's public hook documentation, not from a
         live install - see the confidence note in each file's docstring and
-        the PLATFORM INTEGRATIONS table in `paem.md`. This form is for
+        the PLATFORM INTEGRATIONS table in `skills/paem/paem.md`. This form is for
         closing that gap: run the adapter for real, tell us what its hook
         actually sent and whether block/allow behaved as documented.
 

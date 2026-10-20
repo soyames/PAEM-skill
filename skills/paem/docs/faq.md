@@ -113,11 +113,11 @@ Yes, if the local model can follow multi-step instructions and read/write projec
 
 ## How do I install it?
 
-See [README Quick Start](../README.md#quick-start) and [examples/](../examples/) for your tool.
+See the [README install section](https://github.com/soyames/PAEM-skill#install) and [examples/](../examples/) for your tool.
 
 ## How do I contribute?
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md). Use GitHub issue forms for bugs/features. For security-sensitive reports, see [SECURITY.md](../SECURITY.md) - do not post secrets in public issues.
+See [CONTRIBUTING.md](https://github.com/soyames/PAEM-skill/blob/main/CONTRIBUTING.md). Use GitHub issue forms for bugs/features. For security-sensitive reports, see [SECURITY.md](https://github.com/soyames/PAEM-skill/blob/main/SECURITY.md) - do not post secrets in public issues.
 
 ## Is there a Code of Conduct file?
 

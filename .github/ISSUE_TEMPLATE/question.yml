@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check the [FAQ](https://github.com/soyames/PAEM-skill/blob/master/docs/faq.md) and [examples/](https://github.com/soyames/PAEM-skill/tree/master/examples) first.
+        Check the [FAQ](https://github.com/soyames/PAEM-skill/blob/main/skills/paem/docs/faq.md) and [examples/](https://github.com/soyames/PAEM-skill/tree/main/skills/paem/examples) first.
   - type: dropdown
     id: topic
     attributes:

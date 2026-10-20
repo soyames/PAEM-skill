@@ -7,19 +7,18 @@ body:
     attributes:
       value: |
         Thanks for reporting a problem. **Do not paste API keys, tokens, passwords, or private source.**
-        Security-sensitive issues: use [SECURITY.md](https://github.com/soyames/PAEM-skill/blob/master/SECURITY.md) instead of this form.
+        Security-sensitive issues: use [SECURITY.md](https://github.com/soyames/PAEM-skill/blob/main/SECURITY.md) instead of this form.
   - type: dropdown
     id: area
     attributes:
       label: Area
       options:
         - SKILL.md / paem.md protocol
-        - templates/
-        - prompts/
-        - docs/
-        - examples/
-        - scripts/ (checkpoint guards - paem_checkpoint_guard*.py)
-        - scripts/validate_skill.py
+        - skills/paem/templates/ or schemas/
+        - skills/paem/prompts/
+        - skills/paem/docs/ or examples/
+        - skills/paem/scripts/ (runtime - checkpoint writer, guards)
+        - scripts/install.py or scripts/validate_skill.py
         - Other
     validations:
       required: true

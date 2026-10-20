@@ -513,10 +513,11 @@ Whenever execution resumes:
 
 ---
 
-# SKILL DISCOVERY (OPTIONAL, `scripts/install.py`)
+# SKILL DISCOVERY (OPTIONAL, the repository's `scripts/install.py`)
 
-`scripts/install.py` copies this repo's runtime files into whichever host's
-documented skills directory you name. Documented does not always mean
+The PAEM repository's `scripts/install.py` copies this skill folder
+(`skills/paem/` in the repository) into whichever host's documented skills
+directory you name. Documented does not always mean
 confirmed - the table below separates the two, based on real installs, not
 just what each provider's docs say.
 

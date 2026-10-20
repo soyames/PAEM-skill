@@ -14,12 +14,20 @@ import sys
 import tempfile
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+# The skill every installer copies. Repository-only files (tests, fixtures, CI,
+# this validator, the installer) live outside it and must never ship.
+SKILL_DIR = "skills/paem"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(ROOT / SKILL_DIR / "scripts"))
 import paem_schema_lib  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
+
+
+def skill(rel: str) -> str:
+    return f"{SKILL_DIR}/{rel}"
 
 
 def error(msg: str) -> None:
@@ -46,14 +54,25 @@ def require_dir(rel: str) -> Path | None:
     return path
 
 
+RUNTIME_SCRIPTS = [
+    "paem_guard_core.py",
+    "paem_checkpoint_guard.py",
+    "paem_checkpoint_guard_codex.py",
+    "paem_checkpoint_guard_gemini.py",
+    "paem_checkpoint_guard_cursor.py",
+    "paem_schema_lib.py",
+    "validate_checkpoint.py",
+    "paem_init.py",
+    "paem_hook_debug.py",
+    "paem_fs.py",
+    "paem_repository.py",
+    "paem_checkpoint.py",
+]
+
+
 def check_layout() -> None:
-    required_files = [
-        "README.md",
+    skill_files = [
         "LICENSE",
-        "SECURITY.md",
-        "CONTRIBUTING.md",
-        "CHANGELOG.md",
-        ".gitignore",
         "skill.yaml",
         "SKILL.md",
         "paem.md",
@@ -61,8 +80,8 @@ def check_layout() -> None:
         "docs/checkpointing.md",
         "docs/recovery.md",
         "docs/examples.md",
-        "docs/roadmap.md",
         "docs/faq.md",
+        "docs/schema-migration.md",
         "examples/claude.md",
         "examples/codex.md",
         "examples/cursor.md",
@@ -71,6 +90,7 @@ def check_layout() -> None:
         "examples/openhands.md",
         "examples/aider.md",
         "examples/continue.md",
+        "examples/more-agents.md",
         "prompts/resume.md",
         "prompts/checkpoint.md",
         "prompts/summarize.md",
@@ -87,7 +107,21 @@ def check_layout() -> None:
         "templates/provider_budgets.md",
         "schemas/checkpoint.schema.json",
         "schemas/execution_report.schema.json",
-        "docs/schema-migration.md",
+        *(f"scripts/{name}" for name in RUNTIME_SCRIPTS),
+    ]
+    for rel in skill_files:
+        require_file(skill(rel))
+
+    required_files = [
+        "README.md",
+        "LICENSE",
+        "SECURITY.md",
+        "CONTRIBUTING.md",
+        "CHANGELOG.md",
+        "ROADMAP.md",
+        ".gitignore",
+        "scripts/install.py",
+        "scripts/validate_skill.py",
         "fixtures/README.md",
         "fixtures/sample-project/.paem/project_summary.md",
         "fixtures/sample-project/.paem/architecture.md",
@@ -100,16 +134,6 @@ def check_layout() -> None:
         "fixtures/sample-project/.paem/checkpoints/checkpoint-001.json",
         "fixtures/sample-project/.paem/resume_prompt.md",
         "fixtures/sample-project/.paem/reports/execution_report-001.md",
-        "scripts/paem_guard_core.py",
-        "scripts/paem_checkpoint_guard.py",
-        "scripts/paem_checkpoint_guard_codex.py",
-        "scripts/paem_checkpoint_guard_gemini.py",
-        "scripts/paem_checkpoint_guard_cursor.py",
-        "scripts/install.py",
-        "scripts/paem_schema_lib.py",
-        "scripts/validate_checkpoint.py",
-        "scripts/paem_init.py",
-        "scripts/paem_hook_debug.py",
         ".github/PULL_REQUEST_TEMPLATE.md",
         ".github/CODEOWNERS",
         ".github/ISSUE_TEMPLATE/config.yml",
@@ -125,16 +149,43 @@ def check_layout() -> None:
     if (ROOT / "CODE_OF_CONDUCT.md").exists():
         error("CODE_OF_CONDUCT.md should not exist (removed by project choice)")
 
-    for name in ("docs", "examples", "prompts", "templates", "scripts", ".github", "schemas", "fixtures"):
+    for name in ("scripts", ".github", "fixtures", "tests"):
         require_dir(name)
+    for name in ("docs", "examples", "prompts", "templates", "schemas", "scripts"):
+        require_dir(skill(name))
+
+
+def check_skill_folder_is_only_the_skill() -> None:
+    """Installers copy skills/paem/ whole, so repository-only files must stay out of it."""
+    root = ROOT / SKILL_DIR
+    if not root.is_dir():
+        return  # already reported by check_layout()
+    allowed_top = {"SKILL.md", "paem.md", "skill.yaml", "LICENSE",
+                   "docs", "examples", "prompts", "templates", "schemas", "scripts"}
+    for entry in sorted(root.iterdir()):
+        if entry.name not in allowed_top and entry.name != "__pycache__":
+            error(f"{SKILL_DIR}/{entry.name} is not part of the skill; keep repository files outside {SKILL_DIR}/")
+    for name in ("install.py", "validate_skill.py"):
+        if (root / "scripts" / name).exists():
+            error(f"{SKILL_DIR}/scripts/{name} is a repository tool and must not ship with the skill")
+    for extra in sorted((root / "scripts").glob("*.py")):
+        if extra.name not in RUNTIME_SCRIPTS:
+            warn(f"{SKILL_DIR}/scripts/{extra.name} will ship with the skill; add it to RUNTIME_SCRIPTS if intended")
+    repo_license, skill_license = ROOT / "LICENSE", root / "LICENSE"
+    if repo_license.is_file() and skill_license.is_file():
+        def normalized(path: Path) -> str:
+            return path.read_text(encoding="utf-8").replace("\r\n", "\n")
+
+        if normalized(repo_license) != normalized(skill_license):
+            error(f"{SKILL_DIR}/LICENSE must match the repository LICENSE")
 
 
 def check_no_em_dashes_in_core() -> None:
     """Project style: plain hyphen, not em dash."""
     core = [
         "README.md",
-        "SKILL.md",
-        "paem.md",
+        skill("SKILL.md"),
+        skill("paem.md"),
         "CONTRIBUTING.md",
         "SECURITY.md",
     ]
@@ -199,7 +250,7 @@ def check_agent_skills_spec(fields: dict[str, str]) -> None:
 
 
 def check_skill_md() -> None:
-    path = require_file("SKILL.md")
+    path = require_file(skill("SKILL.md"))
     if not path:
         return
     text = path.read_text(encoding="utf-8")
@@ -215,7 +266,10 @@ def check_skill_md() -> None:
         error("SKILL.md frontmatter must include name: paem")
     if not re.search(r"(?m)^description:\s*", fm):
         error("SKILL.md frontmatter must include description:")
-    check_agent_skills_spec(parse_frontmatter(fm))
+    fields = parse_frontmatter(fm)
+    check_agent_skills_spec(fields)
+    if fields.get("name") != Path(SKILL_DIR).name:
+        error(f"SKILL.md name must match its folder name ({Path(SKILL_DIR).name})")
     body = parts[2]
     if len(body.splitlines()) > 500:
         warn("SKILL.md body is over 500 lines; the Agent Skills spec recommends moving detail into referenced files")
@@ -225,7 +279,7 @@ def check_skill_md() -> None:
 
 
 def check_skill_yaml() -> None:
-    path = require_file("skill.yaml")
+    path = require_file(skill("skill.yaml"))
     if not path:
         return
     text = path.read_text(encoding="utf-8")
@@ -252,7 +306,7 @@ def check_skill_yaml() -> None:
 
 
 def check_checkpoint_template() -> None:
-    path = require_file("templates/checkpoint.json")
+    path = require_file(skill("templates/checkpoint.json"))
     if not path:
         return
     try:
@@ -283,7 +337,7 @@ def check_checkpoint_template() -> None:
 
 def check_schemas_are_valid_json() -> None:
     """Both schema files must at least parse as JSON."""
-    for rel in ("schemas/checkpoint.schema.json", "schemas/execution_report.schema.json"):
+    for rel in (skill("schemas/checkpoint.schema.json"), skill("schemas/execution_report.schema.json")):
         path = ROOT / rel
         if not path.is_file():
             continue  # already reported by check_layout()
@@ -295,17 +349,17 @@ def check_schemas_are_valid_json() -> None:
 
 def check_checkpoint_schema() -> None:
     """Validate checkpoint JSON files against schemas/checkpoint.schema.json."""
-    schema_path = ROOT / "schemas" / "checkpoint.schema.json"
+    schema_path = ROOT / skill("schemas/checkpoint.schema.json")
     if not schema_path.is_file():
         return  # already reported by check_layout()
     try:
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        error(f"schemas/checkpoint.schema.json is not valid JSON: {exc}")
+        error(f"{skill('schemas/checkpoint.schema.json')} is not valid JSON: {exc}")
         return
 
     candidates = [
-        "templates/checkpoint.json",
+        skill("templates/checkpoint.json"),
         "fixtures/sample-project/.paem/latest_checkpoint.json",
         "fixtures/sample-project/.paem/checkpoints/checkpoint-000.json",
         "fixtures/sample-project/.paem/checkpoints/checkpoint-001.json",
@@ -366,18 +420,7 @@ def check_checkpoint_guard_compiles() -> None:
     """The Stop-hook guard scripts must at least be syntactically valid."""
     import py_compile
 
-    guard_scripts = [
-        "scripts/paem_guard_core.py",
-        "scripts/paem_checkpoint_guard.py",
-        "scripts/paem_checkpoint_guard_codex.py",
-        "scripts/paem_checkpoint_guard_gemini.py",
-        "scripts/paem_checkpoint_guard_cursor.py",
-        "scripts/install.py",
-        "scripts/paem_schema_lib.py",
-        "scripts/validate_checkpoint.py",
-        "scripts/paem_init.py",
-        "scripts/paem_hook_debug.py",
-    ]
+    guard_scripts = ["scripts/install.py", *(skill(f"scripts/{name}") for name in RUNTIME_SCRIPTS)]
     for rel in guard_scripts:
         path = ROOT / rel
         if not path.is_file():
@@ -390,9 +433,9 @@ def check_checkpoint_guard_compiles() -> None:
 
 def dry_run_paem_init() -> None:
     """Simulate initializing .paem/ from templates (what an agent should do)."""
-    templates = ROOT / "templates"
+    templates = ROOT / skill("templates")
     if not templates.is_dir():
-        error("templates/ missing; skip dry-run")
+        error(f"{skill('templates')}/ missing; skip dry-run")
         return
 
     tmp = Path(tempfile.mkdtemp(prefix="paem-dryrun-"))
@@ -471,6 +514,7 @@ def main() -> int:
     print("-" * 60)
 
     check_layout()
+    check_skill_folder_is_only_the_skill()
     check_license()
     check_skill_md()
     check_skill_yaml()

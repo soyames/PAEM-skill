@@ -164,4 +164,4 @@ are wired to a host's top-level `Stop` event only, never to a
 
 ## Future direction
 
-See [roadmap.md](roadmap.md). The long-term ambition is a **shared execution protocol** so tools can hand off mid-project using the same checkpoint and resume conventions.
+See the [roadmap](https://github.com/soyames/PAEM-skill/blob/main/ROADMAP.md). The long-term ambition is a **shared execution protocol** so tools can hand off mid-project using the same checkpoint and resume conventions.

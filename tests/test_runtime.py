@@ -10,7 +10,10 @@ import unittest
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+SKILL_ROOT = ROOT / "skills" / "paem"
+# Runtime scripts ship inside the skill; the installer and validator stay in the repository.
+SCRIPT_DIRS = [SKILL_ROOT / "scripts", ROOT / "scripts"]
+sys.path[:0] = [str(path) for path in SCRIPT_DIRS]
 from install import PATHS
 from paem_init import build_baseline_checkpoint
 
@@ -27,8 +30,8 @@ class RuntimeCase(unittest.TestCase):
                               env=env, capture_output=True, text=True, timeout=30)
 
     def script(self, name, *args, input=None, env=None):
-        return self.run_command(sys.executable, str(ROOT / "scripts" / name),
-                                *map(str, args), input=input, env=env)
+        path = next(directory / name for directory in SCRIPT_DIRS if (directory / name).is_file())
+        return self.run_command(sys.executable, str(path), *map(str, args), input=input, env=env)
 
     def git(self, *args):
         result = self.run_command("git", *args)
@@ -113,6 +116,18 @@ class InstallerTests(RuntimeCase):
                     base = home if scope == "global" else target
                     self.assertTrue((base / relative / "SKILL.md").is_file(), relative)
                     self.assertTrue((base / relative / "scripts/paem_checkpoint.py").is_file(), relative)
+
+    def test_install_ships_only_the_skill_folder(self):
+        result = self.script("install.py", "--provider", "agents", "--target", self.project)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        installed = self.project / ".agents/skills/paem"
+        shipped = {path.relative_to(installed).as_posix() for path in installed.rglob("*") if path.is_file()}
+        expected = {path.relative_to(SKILL_ROOT).as_posix() for path in SKILL_ROOT.rglob("*")
+                    if path.is_file() and "__pycache__" not in path.parts}
+        self.assertEqual(shipped - {".paem-install.json"}, expected)
+        for repository_only in ["README.md", "CHANGELOG.md", "ROADMAP.md", "tests", "fixtures",
+                                ".github", "scripts/install.py", "scripts/validate_skill.py"]:
+            self.assertFalse((installed / repository_only).exists(), repository_only)
 
     def test_zip_package_has_skill_folder_and_never_overwrites(self):
         archive = Path(self.temp.name) / "dist" / "paem.zip"

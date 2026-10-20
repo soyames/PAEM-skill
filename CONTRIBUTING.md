@@ -32,10 +32,17 @@ cleans them up, and it never touches your own `.paem/` state.
 
 ## Ways to contribute
 
+Everything that ships lives in `skills/paem/` - the folder every installer
+copies. Repository tooling (`scripts/install.py`, `scripts/validate_skill.py`),
+`tests/`, `fixtures/` and CI stay outside it, and `validate_skill.py` fails if
+a repository-only file lands inside. Paths below are inside `skills/paem/`
+unless they say otherwise.
+
 ### Improve the runtime
 
-`scripts/` holds the optional runtime: the installer, the `.paem/`
+`scripts/` (in `skills/paem/`) holds the optional runtime: the `.paem/`
 initializer, the checkpoint writer/validator and the Stop-hook guard adapters.
+The installer that copies the skill is the repository's own `scripts/install.py`.
 Anything you change there needs a regression that drives the real entry point in
 a disposable project rather than a unit test of an extracted helper - the
 defects this suite was built to catch (quoted Git status paths, deletions with
@@ -71,7 +78,7 @@ When adding a provider:
 1. Create `examples/<provider>.md`
 2. Document install path, how to load the skill, and a resume example
 3. Note tool-specific quirks (skills dirs, context limits, file tools)
-4. Link it from `README.md`
+4. Link it from the repository `README.md`
 5. Do **not** claim certified vendor support unless you tested it - prefer “compatible / designed for”
 
 ### Verify a hook adapter

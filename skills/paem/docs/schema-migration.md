@@ -61,8 +61,9 @@ When a MAJOR bump is unavoidable:
 4. Bump `schema_version` in the templates.
 5. Note the change in `CHANGELOG.md` under a `### Schema` heading so it's
    easy to find independent of skill feature changes.
-6. Run `python scripts/validate_skill.py` - it validates the templates
-   against the schemas (see `check_checkpoint_schema()`).
+6. From the root of the PAEM repository, run `python scripts/validate_skill.py`
+   - it validates the templates against the schemas (see
+   `check_checkpoint_schema()`).
 
 ## Migration log
 

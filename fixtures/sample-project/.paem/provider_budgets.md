@@ -2,7 +2,7 @@
 
 No AI provider exposes "quota remaining" to an agent session. These
 thresholds are self-reported wall-clock heuristics, not real quota
-readings - see `templates/provider_budgets.md` in the PAEM repo for the
+readings - see `skills/paem/templates/provider_budgets.md` in the PAEM repo for the
 full explanation.
 
 | Provider | Plan/tier | Typical window | Soft checkpoint threshold |

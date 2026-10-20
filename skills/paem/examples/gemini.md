@@ -8,14 +8,15 @@ Gemini (app, API, or IDE integrations) can run long coding tasks but still hits 
 
 Gemini CLI has a real skills system - drop the package where it scans and it's
 discovered automatically, no prompting required. Its own installer works
-straight from this repo:
+straight from the repository; point it at the skill folder, since it only
+looks for `SKILL.md` where you send it:
 
 ```bash
-gemini skills install https://github.com/soyames/PAEM-skill
+gemini skills install https://github.com/soyames/PAEM-skill --path skills/paem
 ```
 
-That copies the whole repository (including `.git/` and `tests/`). For just
-the runtime files, use the bundled installer:
+To pick the directory yourself, use the bundled installer from a clone of the
+repository:
 
 ```bash
 # project-scoped (this repo only)

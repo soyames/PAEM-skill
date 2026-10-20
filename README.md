@@ -61,9 +61,11 @@ Automation platforms exist, but not everyone can set them up or operate them. PA
 ## Install
 
 PAEM follows the open [Agent Skills](https://agentskills.io) format - a folder
-with a `SKILL.md` - so it installs like any other skill. Most coding agents
-now also read the shared `.agents/skills/` folder, so one install usually
-covers every tool you use.
+with a `SKILL.md` - so it installs like any other skill. The skill is the
+[`skills/paem/`](skills/paem/) folder, and every install method below copies
+that folder and nothing else: the tests, fixtures and CI in the rest of this
+repository never reach your agent. Most coding agents now also read the shared
+`.agents/skills/` folder, so one install usually covers every tool you use.
 
 **One command, many agents** - the open [`skills`](https://github.com/vercel-labs/skills)
 CLI asks which agents to install for:
@@ -75,11 +77,11 @@ npx skills add soyames/PAEM-skill
 **Gemini CLI's own installer:**
 
 ```bash
-gemini skills install https://github.com/soyames/PAEM-skill
+gemini skills install https://github.com/soyames/PAEM-skill --path skills/paem
 ```
 
-Both copy the whole repository. For only the runtime files, and to choose the
-directory yourself, use the bundled installer (Python 3.11+, no network):
+To choose the directory yourself, use the bundled installer (Python 3.11+, no
+network):
 
 ```bash
 git clone https://github.com/soyames/PAEM-skill.git
@@ -95,27 +97,27 @@ your edits from its own.
 
 For Claude.ai and Claude Desktop chats, build an upload package with
 `python PAEM-skill/scripts/install.py --zip dist/paem.zip` - see
-[examples/claude.md](examples/claude.md).
+[skills/paem/examples/claude.md](skills/paem/examples/claude.md).
 
 ### Where it works
 
 "Tested" means a real install was checked in that tool, not just that files
-landed where its docs say. The SKILL DISCOVERY table in [`paem.md`](paem.md)
-has versions and details.
+landed where its docs say. The SKILL DISCOVERY table in
+[`paem.md`](skills/paem/paem.md) has versions and details.
 
 | Tool | Install | Status | Guide |
 |------|---------|--------|-------|
-| Claude Code | `--provider claude-code` | Tested | [claude.md](examples/claude.md) |
-| Claude.ai / Claude Desktop chat | `--zip`, then upload | Tested (uploaded skill) | [claude.md](examples/claude.md) |
-| Codex CLI | `--provider agents` or `codex` | Tested, v0.162.1 | [codex.md](examples/codex.md) |
-| Gemini CLI | `--provider agents` or `gemini-cli` | Tested, v0.64.0 | [gemini.md](examples/gemini.md) |
-| Cursor | `--provider agents` or `cursor` | Documented | [cursor.md](examples/cursor.md) |
-| GitHub Copilot, OpenCode, Devin Desktop, goose | `--provider agents` | Documented | [more-agents.md](examples/more-agents.md) |
-| Kiro | `--provider kiro` | Documented | [more-agents.md](examples/more-agents.md) |
-| OpenHands | `--provider agents` | Documented | [openhands.md](examples/openhands.md) |
-| Antigravity | `--provider antigravity` | Failed an earlier real-install test | [antigravity.md](examples/antigravity.md) |
-| Aider, Continue | Conventions / rules file | Manual | [aider.md](examples/aider.md), [continue.md](examples/continue.md) |
-| Any other file-capable agent | Load `SKILL.md` and `paem.md` | Manual | - |
+| Claude Code | `--provider claude-code` | Tested | [claude.md](skills/paem/examples/claude.md) |
+| Claude.ai / Claude Desktop chat | `--zip`, then upload | Tested (uploaded skill) | [claude.md](skills/paem/examples/claude.md) |
+| Codex CLI | `--provider agents` or `codex` | Tested, v0.162.1 | [codex.md](skills/paem/examples/codex.md) |
+| Gemini CLI | `--provider agents` or `gemini-cli` | Tested, v0.64.0 | [gemini.md](skills/paem/examples/gemini.md) |
+| Cursor | `--provider agents` or `cursor` | Documented | [cursor.md](skills/paem/examples/cursor.md) |
+| GitHub Copilot, OpenCode, Devin Desktop, goose | `--provider agents` | Documented | [more-agents.md](skills/paem/examples/more-agents.md) |
+| Kiro | `--provider kiro` | Documented | [more-agents.md](skills/paem/examples/more-agents.md) |
+| OpenHands | `--provider agents` | Documented | [openhands.md](skills/paem/examples/openhands.md) |
+| Antigravity | `--provider antigravity` | Failed an earlier real-install test | [antigravity.md](skills/paem/examples/antigravity.md) |
+| Aider, Continue | Conventions / rules file | Manual | [aider.md](skills/paem/examples/aider.md), [continue.md](skills/paem/examples/continue.md) |
+| Any other file-capable agent | Load `skills/paem/SKILL.md` and `paem.md` | Manual | - |
 
 `npx skills add` was tested too: it installs PAEM, and Codex CLI discovers the
 result. Compatibility is **protocol-level** (files + instructions), not a
@@ -182,14 +184,23 @@ Or paste the contents of `.paem/resume_prompt.md`.
 
 ### 4. Validate this package (maintainers / contributors)
 
-From the skill repo root:
+The repository is laid out so only the skill ships:
+
+```text
+skills/paem/          the skill - SKILL.md, paem.md, prompts, templates, schemas,
+                      runtime scripts, docs, examples; the only folder installers copy
+scripts/              install.py and validate_skill.py (repository tools)
+tests/, fixtures/     regression tests and sample state (never shipped)
+```
+
+From the repository root:
 
 ```bash
 python scripts/validate_skill.py                    # layout, Agent Skills spec, schema, templates
 python -m unittest discover -s tests -v             # installer, initializer, writer, hook adapters
 ```
 
-The first checks required files, YAML/JSON shape, templates, and a dry-run init of `.paem/` into a temp directory. The second drives the real entry points in disposable Git projects it creates and cleans up itself; both run in CI on Ubuntu and Windows, Python 3.11 and 3.12.
+The first checks required files, YAML/JSON shape, templates, that nothing repository-only sits inside `skills/paem/`, and a dry-run init of `.paem/` into a temp directory. The second drives the real entry points in disposable Git projects it creates and cleans up itself; both run in CI on Ubuntu and Windows, Python 3.11 and 3.12.
 
 ---
 
@@ -203,14 +214,14 @@ The first checks required files, YAML/JSON shape, templates, and a dry-run init 
 > Always verify.
 > Always resume.
 
-Longer term, PAEM aims to be a **portable execution protocol**: stable checkpoint, summary, and resume formats so work can move across tools without losing continuity. See [docs/roadmap.md](docs/roadmap.md).
+Longer term, PAEM aims to be a **portable execution protocol**: stable checkpoint, summary, and resume formats so work can move across tools without losing continuity. See [ROADMAP.md](ROADMAP.md).
 
 ## What PAEM does not do
 
 Stated here rather than buried, because the honest version is more useful:
 
 - **It cannot recover work that was never checkpointed.** Checkpoints happen at milestones; a crash between two of them loses that gap. The Stop hook narrows the gap on hosts that have one, but it cannot run after a hard crash or an exhausted quota.
-- **It does not enforce anything by itself.** Checkpointing is an instruction the agent follows. The hook adapters are a best-effort, fail-open check on hosts that support them - see the PLATFORM INTEGRATIONS table in `paem.md`.
+- **It does not enforce anything by itself.** Checkpointing is an instruction the agent follows. The hook adapters are a best-effort, fail-open check on hosts that support them - see the PLATFORM INTEGRATIONS table in [`paem.md`](skills/paem/paem.md).
 - **It cannot predict rate limits.** No provider exposes remaining quota or credits to a session, so PAEM's time thresholds and transcript phrase scan are heuristics, not telemetry.
 - **It does not verify your work.** A published checkpoint records what the agent claimed, and is labelled `verification_basis: "self_reported"` for exactly that reason. What the tool does check is that the record is well formed and still bound to the repository it was written against.
 - **It is not a hosted service.** No daemon, no account, no telemetry. Files on disk, in your repo.
@@ -221,12 +232,13 @@ Stated here rather than buried, because the honest version is more useful:
 
 | Doc | Topic |
 |-----|--------|
-| [Architecture](docs/architecture.md) | Execution model and components |
-| [Checkpointing](docs/checkpointing.md) | Formats and frequency |
-| [Recovery](docs/recovery.md) | Limits, crashes, resume |
-| [Examples](docs/examples.md) | End-to-end scenarios |
-| [Roadmap](docs/roadmap.md) | Vision and next versions |
-| [FAQ](docs/faq.md) | Common questions |
+| [Protocol](skills/paem/paem.md) | The full protocol agents follow |
+| [Architecture](skills/paem/docs/architecture.md) | Execution model and components |
+| [Checkpointing](skills/paem/docs/checkpointing.md) | Formats and frequency |
+| [Recovery](skills/paem/docs/recovery.md) | Limits, crashes, resume |
+| [Examples](skills/paem/docs/examples.md) | End-to-end scenarios |
+| [FAQ](skills/paem/docs/faq.md) | Common questions |
+| [Roadmap](ROADMAP.md) | Vision and next versions |
 | [Security](SECURITY.md) | Reporting vulnerabilities and contribution safety |
 | [Contributing](CONTRIBUTING.md) | PRs and issues from the community |
 
